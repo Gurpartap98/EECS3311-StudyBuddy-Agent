@@ -7,3 +7,4 @@ out/
 bin/
 .vscode/
 *.log
+stage1/START_HERE.md
