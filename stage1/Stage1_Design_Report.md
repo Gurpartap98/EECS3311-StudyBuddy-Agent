@@ -163,7 +163,26 @@ Login, logout, exit, and about screens are excluded from the feature count.
 
 ---
 
-## 3. Design Patterns
+## 3. Class Diagram
+
+**Diagram (PNG):** [`diagrams/Class.png`](diagrams/Class.png)  
+**UMLet source:** [`diagrams/Class.uxf`](diagrams/Class.uxf)
+
+### 3.1 Major classes and interfaces
+| Layer | Classes / interfaces |
+|-------|----------------------|
+| Presentation | `StudyGUI`, `StudyCLI`, `QuizView`, `ProgressView` |
+| Control / agent | `AgentController`, `Planner`, `ToolManager` |
+| LLM | `LLMClient` (interface), `OllamaClient`, `PromptBuilder` |
+| Tools | `Tool` (interface), `SummarizeTool`, `QuizTool`, `MaterialImportTool`, `RetrievalTool`, `ExplainTool`, `QuizFactory` |
+| Services | `DocumentStore`, `QuizEngine`, `ProgressTracker` |
+| Domain | `Course`, `Material`, `Quiz`, `Question` (`«abstract»`) |
+
+Relationships include associations from `AgentController` to `Planner` and `ToolManager`; realization of `LLMClient` by `OllamaClient` and of `Tool` by the concrete tools; `QuizTool` using `QuizFactory`; composition/aggregation of `Course`–`Material` and `Quiz`–`Question`; and Observer notification from `ProgressTracker` to `ProgressView`. The five design patterns explained in Section 4 are labeled on the class diagram.
+
+---
+
+## 4. Design Pattern Explanations
 
 | Pattern | Problem addressed | Participating classes | Roles | Rationale | Without the pattern |
 |---------|-------------------|----------------------|-------|-----------|---------------------|
@@ -175,19 +194,19 @@ Login, logout, exit, and about screens are excluded from the feature count.
 
 ---
 
-## 4. Use-Case Diagram and Descriptions
+## 5. Use-Case Diagram and Descriptions
 
 **Diagram (PNG):** [`diagrams/use_case.png`](diagrams/use_case.png)  
 **UMLet source:** [`diagrams/use_case.uxf`](diagrams/use_case.uxf)
 
-### 4.1 Actors
+### 5.1 Actors
 | Actor | Type | Role |
 |-------|------|------|
 | Student | Primary | Uses GUI and CLI to study |
 | Ollama LLM Service | External system | Provides generation and reasoning |
 | File System | External system | Supplies uploaded learning files (and may back stored progress data) |
 
-### 4.2 Use cases
+### 5.2 Use cases
 
 | ID | Name | Related features |
 |----|------|------------------|
@@ -206,7 +225,7 @@ Login, logout, exit, and about screens are excluded from the feature count.
 
 On the use-case diagram, a dashed arrow labeled `<<include>>` points from UC09 (Take and Grade Quiz) to UC10 (Identify Weak Topics). UC12 may also include quiz generation (UC08) when the natural-language command requests a quiz, as described in the UC12 write-up and SD06.
 
-### 4.3 Use-case descriptions
+### 5.3 Use-case descriptions
 
 #### UC01 — Manage Course
 - **Actors:** Student  
@@ -338,25 +357,6 @@ On the use-case diagram, a dashed arrow labeled `<<include>>` points from UC09 (
 - **Alternative / exception flows:** Unclear intent → clarification; tool failure → partial result with error. May include UC08 when a quiz is requested.  
 - **Postconditions:** Planned artifacts created where successful.  
 - **Related features:** F12  
-
----
-
-## 5. Class Diagram
-
-**Diagram (PNG):** [`diagrams/Class.png`](diagrams/Class.png)  
-**UMLet source:** [`diagrams/Class.uxf`](diagrams/Class.uxf)
-
-### 5.1 Major classes and interfaces
-| Layer | Classes / interfaces |
-|-------|----------------------|
-| Presentation | `StudyGUI`, `StudyCLI`, `QuizView`, `ProgressView` |
-| Control / agent | `AgentController`, `Planner`, `ToolManager` |
-| LLM | `LLMClient` (interface), `OllamaClient`, `PromptBuilder` |
-| Tools | `Tool` (interface), `SummarizeTool`, `QuizTool`, `MaterialImportTool`, `RetrievalTool`, `ExplainTool`, `QuizFactory` |
-| Services | `DocumentStore`, `QuizEngine`, `ProgressTracker` |
-| Domain | `Course`, `Material`, `Quiz`, `Question` (`«abstract»`) |
-
-Relationships include associations from `AgentController` to `Planner` and `ToolManager`; realization of `LLMClient` by `OllamaClient` and of `Tool` by the concrete tools; `QuizTool` using `QuizFactory`; composition/aggregation of `Course`–`Material` and `Quiz`–`Question`; and Observer notification from `ProgressTracker` to `ProgressView`. The five design patterns from Section 3 are labeled on the class diagram.
 
 ---
 
