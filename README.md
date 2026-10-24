@@ -24,15 +24,25 @@ cp .env.example .env
 # Edit .env and set LLM_PROVIDER + LLM_API_KEY (never commit .env)
 ```
 
-## Run (scaffold)
+## Run
 
 ```bash
 mvn -q compile
-mvn -q exec:java -Dexec.args="help"
-# Later commits wire:
-#   mvn -q exec:java -Dexec.args="cli"
-#   mvn -q exec:java -Dexec.args="gui"
+mvn -q exec:java -Dexec.args="cli"   # interactive CLI
+mvn -q exec:java -Dexec.args="gui"   # Swing GUI
 ```
+
+CLI quick start:
+
+```text
+course EECS 3311|EECS3311|FW26
+upload <courseId> data/samples/os-scheduling.txt
+materials <courseId>
+ask What is Round Robin scheduling?
+```
+
+AI features (summarize / concepts / quiz / flashcards) need a configured LLM in `.env`.
+Deterministic features (courses, upload TXT/MD, weak-topic stats, plan fallback) work without a key.
 
 ## Package layout
 
