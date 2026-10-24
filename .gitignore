@@ -1,10 +1,32 @@
+# OS / IDE
 .DS_Store
-*.class
-*.jar
 .idea/
 *.iml
-out/
-bin/
 .vscode/
 *.log
+
+# Java / Maven
+*.class
+*.jar
+*.war
+out/
+bin/
+target/
+
+# Local secrets — never commit real keys
+.env
+.env.*
+!.env.example
+config.local.json
+
+# Runtime data (keep sample fixtures)
+data/*
+!data/samples/
+!data/samples/**
+
+# Local-only notes (do not publish)
 stage1/START_HERE.md
+STAGE2_AGENT_HANDOFF.md
+CLAUDE_HANDOFF_*
+*.pdf
+!stage2-report.pdf

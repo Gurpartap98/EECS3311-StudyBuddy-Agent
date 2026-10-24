@@ -1,0 +1,13 @@
+Operating Systems — CPU Scheduling (sample notes)
+
+Goals of scheduling: maximize CPU utilization, throughput, and fairness; minimize waiting and response time.
+
+FCFS (First-Come, First-Served): simple queue; convoy effect can hurt short jobs.
+
+SJF (Shortest Job First): optimal average waiting time if run times are known; starvation risk for long jobs.
+
+Round Robin: time quantum; good for interactive systems; too small a quantum increases context-switch overhead.
+
+Priority scheduling: higher-priority processes run first; aging can mitigate starvation.
+
+Multilevel feedback queues: processes move between queues based on behavior (CPU-bound vs I/O-bound).
