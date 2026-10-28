@@ -44,6 +44,22 @@ ask What is Round Robin scheduling?
 AI features (summarize / concepts / quiz / flashcards) need a configured LLM in `.env`.
 Deterministic features (courses, upload TXT/MD, weak-topic stats, plan fallback) work without a key.
 
+### Free LLM setup (recommended: Groq)
+
+1. Create a free key at https://console.groq.com/keys
+2. `cp .env.example .env`
+3. Set:
+   ```bash
+   LLM_PROVIDER=groq
+   LLM_API_KEY=gsk_your_key_here
+   LLM_MODEL=llama-3.1-8b-instant
+   ```
+4. Run CLI/GUI — startup prints `StudyBuddy LLM: groq/...`
+
+Gemini: set `LLM_PROVIDER=gemini` and a Google AI Studio key.  
+Ollama: set `LLM_PROVIDER=ollama` (no API key; local server required).  
+Missing/invalid key falls back to `stub/unconfigured` so the app still starts.
+
 ## Package layout
 
 ```
