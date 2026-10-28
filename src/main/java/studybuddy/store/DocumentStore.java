@@ -71,6 +71,16 @@ public class DocumentStore {
         return Optional.ofNullable(materials.get(id));
     }
 
+    public Optional<Quiz> findQuiz(String id) {
+        return Optional.ofNullable(quizzes.get(id));
+    }
+
+    public List<Quiz> listQuizzes(String courseId) {
+        return quizzes.values().stream()
+                .filter(q -> q.getCourseId().equals(courseId))
+                .toList();
+    }
+
     public List<Course> listCourses() {
         return List.copyOf(courses.values());
     }

@@ -90,7 +90,8 @@ public final class StudyGUI {
         materialButtons.add(button("Summarize", this::onSummarize));
         materialButtons.add(button("Concepts", this::onConcepts));
         materialButtons.add(button("Flashcards", this::onFlashcards));
-        materialButtons.add(button("Quiz", this::onQuiz));
+        materialButtons.add(button("Quiz (AI)", this::onQuiz));
+        materialButtons.add(button("Demo Quiz", this::onDemoQuiz));
         materialButtons.add(button("Study Plan", this::onPlan));
         materialButtons.add(button("Weak Topics", this::onWeak));
         mid.add(materialButtons, BorderLayout.SOUTH);
@@ -204,6 +205,25 @@ public final class StudyGUI {
         showResult(result);
         if (result.isSuccess() && result.get("quiz") instanceof Quiz quiz) {
             new QuizView(frame).open(quiz);
+        }
+    }
+
+    private void onDemoQuiz() {
+        Course course = selectedCourse();
+        if (course == null) {
+            return;
+        }
+        Result result = agent.createDemoQuiz(course.getId());
+        showResult(result);
+        if (result.isSuccess() && result.get("quiz") instanceof Quiz quiz) {
+            new QuizView(frame).open(quiz);
+            // Auto-grade a mixed attempt so ProgressView / weak topics update (F09–F11 demo)
+            java.util.Map<String, String> answers = new java.util.LinkedHashMap<>();
+            var questions = quiz.getQuestions();
+            for (int i = 0; i < questions.size(); i++) {
+                answers.put(questions.get(i).getId(), i == 0 ? "b" : "a");
+            }
+            showResult(agent.gradeQuiz(quiz.getId(), answers));
         }
     }
 

@@ -1,14 +1,22 @@
 package studybuddy.agent;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import studybuddy.domain.Course;
 import studybuddy.domain.PlanSpec;
+import studybuddy.domain.Question;
+import studybuddy.domain.QuestionSpec;
+import studybuddy.domain.Quiz;
 import studybuddy.domain.QuizSpec;
 import studybuddy.llm.LLMClient;
+import studybuddy.progress.ProgressEvent;
 import studybuddy.progress.ProgressTracker;
+import studybuddy.quiz.MCQQuestionFactory;
+import studybuddy.quiz.QuizEngine;
+import studybuddy.quiz.QuizFactory;
 import studybuddy.store.DocumentStore;
 import studybuddy.tools.ConceptTool;
 import studybuddy.tools.ExplainTool;
@@ -31,6 +39,8 @@ public final class AgentController {
     private final ToolManager toolManager;
     private final Planner planner;
     private final ProgressTracker progressTracker;
+    private final QuizEngine quizEngine = new QuizEngine();
+    private final ExplainTool explainTool = new ExplainTool();
 
     public AgentController(DocumentStore store, LLMClient llm, ProgressTracker progressTracker) {
         this.store = Objects.requireNonNull(store, "store");
@@ -48,7 +58,7 @@ public final class AgentController {
         toolManager.register(new RetrievalTool());
         toolManager.register(new FlashcardTool());
         toolManager.register(new QuizTool());
-        toolManager.register(new ExplainTool());
+        toolManager.register(explainTool);
         toolManager.register(new StudyPlanTool(progressTracker));
     }
 
@@ -143,6 +153,100 @@ public final class AgentController {
             params.put("materialId", spec.getMaterialId());
         }
         return toolManager.executeTool("quiz", ctx(params));
+    }
+
+    /**
+     * Deterministic demo quiz built via Factory Method (useful without an LLM key).
+     */
+    public Result createDemoQuiz(String courseId) {
+        if (store.findCourse(courseId).isEmpty()) {
+            return Result.fail("Course not found: " + courseId);
+        }
+        QuizFactory factory = new MCQQuestionFactory();
+        List<Question> questions = new ArrayList<>();
+        questions.add(factory.createQuestion(QuestionSpec.mcq(
+                "Which scheduler can cause the convoy effect?",
+                "CPU Scheduling",
+                "easy",
+                List.of("Round Robin", "FCFS", "Multilevel feedback", "Priority with aging"),
+                1)));
+        questions.add(factory.createQuestion(QuestionSpec.mcq(
+                "Round Robin is characterized by which parameter?",
+                "CPU Scheduling",
+                "easy",
+                List.of("Priority ceiling", "Time quantum", "Working set", "Belady anomaly"),
+                1)));
+        questions.add(factory.createQuestion(QuestionSpec.mcq(
+                "SJF optimizes which metric when runtimes are known?",
+                "CPU Scheduling",
+                "medium",
+                List.of("Throughput only", "Average waiting time", "Context-switch cost", "Disk latency"),
+                1)));
+        Quiz quiz = new Quiz(courseId, "Demo CPU Scheduling Quiz", questions);
+        store.save(quiz);
+        return Result.ok(
+                "Created demo quiz " + quiz.getId() + " with " + quiz.size() + " MCQ questions",
+                Map.of("quiz", quiz));
+    }
+
+    /**
+     * F09 — grade answers with {@link QuizEngine}, record progress (F10/F11), explain misses.
+     *
+     * @param answers map of questionId → student answer
+     */
+    public Result gradeQuiz(String quizId, Map<String, String> answers) {
+        Quiz quiz = store.findQuiz(quizId).orElse(null);
+        if (quiz == null) {
+            return Result.fail("Quiz not found: " + quizId);
+        }
+        QuizEngine.GradeReport report = quizEngine.grade(quiz, answers);
+
+        // Aggregate per-topic scores for ProgressTracker / weak topics
+        Map<String, List<Boolean>> byTopic = new LinkedHashMap<>();
+        for (QuizEngine.QuestionResult qr : report.results()) {
+            String topic = qr.topic().isBlank() ? "general" : qr.topic();
+            byTopic.computeIfAbsent(topic, t -> new ArrayList<>()).add(qr.correct());
+        }
+        for (Map.Entry<String, List<Boolean>> entry : byTopic.entrySet()) {
+            long ok = entry.getValue().stream().filter(Boolean::booleanValue).count();
+            double pct = 100.0 * ok / entry.getValue().size();
+            progressTracker.record(new ProgressEvent(quiz.getCourseId(), entry.getKey(), pct));
+        }
+
+        StringBuilder message = new StringBuilder();
+        message.append("Score: ")
+                .append(report.correctCount())
+                .append('/')
+                .append(report.total())
+                .append(" (")
+                .append(String.format("%.0f", report.scorePercent()))
+                .append("%)\n");
+
+        List<String> explanations = new ArrayList<>();
+        for (QuizEngine.QuestionResult qr : report.results()) {
+            message.append(qr.correct() ? "[OK] " : "[MISS] ")
+                    .append(qr.prompt())
+                    .append(" → you: ")
+                    .append(qr.studentAnswer().isBlank() ? "(blank)" : qr.studentAnswer())
+                    .append("; correct: ")
+                    .append(qr.correctAnswer())
+                    .append('\n');
+            if (!qr.correct()) {
+                String explanation = explainTool.explain(qr.prompt(), qr.correctAnswer(), qr.studentAnswer());
+                explanations.add(explanation);
+                message.append("  Explain: ").append(explanation).append('\n');
+            }
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("report", report);
+        data.put("explanations", explanations);
+        data.put("weakTopics", progressTracker.weakTopics(quiz.getCourseId()));
+        return Result.ok(message.toString().trim(), data);
+    }
+
+    public QuizEngine getQuizEngine() {
+        return quizEngine;
     }
 
     /** F12 — multi-step NL command handling via Planner + ToolManager. */

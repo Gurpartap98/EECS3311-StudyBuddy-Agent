@@ -2,14 +2,18 @@ package studybuddy.ui;
 
 import java.io.PrintStream;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 import studybuddy.agent.AgentController;
 import studybuddy.domain.Course;
 import studybuddy.domain.Material;
+import studybuddy.domain.Question;
 import studybuddy.domain.PlanSpec;
 import studybuddy.domain.QuestionSpec;
+import studybuddy.domain.Quiz;
 import studybuddy.domain.QuizSpec;
 import studybuddy.tools.Result;
 
@@ -68,6 +72,9 @@ public final class StudyCLI {
                 case "ask" -> printResult(agent.ask(args));
                 case "flashcards" -> flashcards(args);
                 case "quiz" -> quiz(args);
+                case "demo-quiz" -> printResult(agent.createDemoQuiz(args));
+                case "quizzes" -> listQuizzes(args);
+                case "grade" -> grade(args);
                 case "plan" -> plan(args);
                 case "weak" -> weak(args);
                 case "nl" -> printResult(agent.handleRequest(args));
@@ -90,6 +97,9 @@ public final class StudyCLI {
                   ask <question>
                   flashcards <materialId> [count]
                   quiz <courseId> [materialId] [count]
+                  demo-quiz <courseId>
+                  quizzes <courseId>
+                  grade <quizId> <a1,a2,...>   (answers by question order: a/b/c/d or text)
                   plan <courseId> [hours] [examDate]
                   weak <courseId>
                   nl <natural language request>
@@ -170,6 +180,46 @@ public final class StudyCLI {
         int count = bits.length > 2 ? Integer.parseInt(bits[2]) : 5;
         QuizSpec spec = new QuizSpec(courseId, materialId, count, "medium", QuestionSpec.Kind.MCQ, "");
         printResult(agent.generateQuiz(spec));
+    }
+
+    private void listQuizzes(String courseId) {
+        if (courseId.isBlank()) {
+            out.println("Usage: quizzes <courseId>");
+            return;
+        }
+        List<Quiz> quizzes = agent.getStore().listQuizzes(courseId);
+        if (quizzes.isEmpty()) {
+            out.println("(no quizzes)");
+            return;
+        }
+        for (Quiz q : quizzes) {
+            out.printf("%s  %s  (%d questions)%n", q.getId(), q.getTitle(), q.size());
+            int i = 1;
+            for (Question question : q.getQuestions()) {
+                out.printf("   %d. [%s] %s%n", i++, question.getType(), question.getPrompt());
+            }
+        }
+    }
+
+    private void grade(String args) {
+        String[] bits = args.split("\\s+", 2);
+        if (bits.length < 2) {
+            out.println("Usage: grade <quizId> <a1,a2,...>");
+            return;
+        }
+        Quiz quiz = agent.getStore().findQuiz(bits[0]).orElse(null);
+        if (quiz == null) {
+            out.println("Quiz not found: " + bits[0]);
+            return;
+        }
+        String[] rawAnswers = bits[1].split(",");
+        Map<String, String> answers = new LinkedHashMap<>();
+        List<Question> questions = quiz.getQuestions();
+        for (int i = 0; i < questions.size(); i++) {
+            String ans = i < rawAnswers.length ? rawAnswers[i].trim() : "";
+            answers.put(questions.get(i).getId(), ans);
+        }
+        printResult(agent.gradeQuiz(bits[0], answers));
     }
 
     private void plan(String args) {
