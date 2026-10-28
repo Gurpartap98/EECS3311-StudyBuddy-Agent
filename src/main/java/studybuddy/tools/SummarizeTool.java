@@ -3,6 +3,7 @@ package studybuddy.tools;
 import java.util.Map;
 import studybuddy.domain.Material;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 
 /** Summarizes a material via LLMClient (F03). */
 public final class SummarizeTool implements Tool {
@@ -23,13 +24,7 @@ public final class SummarizeTool implements Tool {
             return Result.fail("Material has no extracted text");
         }
 
-        String prompt = """
-                Summarize the following study notes in clear bullet points for a university student.
-                Keep important terms.
-
-                NOTES:
-                %s
-                """.formatted(truncate(material.getExtractedText(), 6000));
+        String prompt = PromptBuilder.buildSummaryPrompt(material.getExtractedText());
         try {
             String summary = ctx.getLlm().generate(prompt);
             material.setSummary(summary);
@@ -38,9 +33,5 @@ public final class SummarizeTool implements Tool {
         } catch (LLMException ex) {
             return Result.fail(ex.getMessage());
         }
-    }
-
-    private static String truncate(String text, int max) {
-        return text.length() <= max ? text : text.substring(0, max) + "\n...[truncated]";
     }
 }

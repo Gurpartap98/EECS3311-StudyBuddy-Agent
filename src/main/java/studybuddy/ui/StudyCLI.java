@@ -132,7 +132,11 @@ public final class StudyCLI {
         String name = bits[0].trim();
         String code = bits.length > 1 ? bits[1].trim() : "";
         String term = bits.length > 2 ? bits[2].trim() : "";
-        printResult(agent.createCourse(name, code, term));
+        Result result = agent.createCourse(name, code, term);
+        if (result.isSuccess() && result.get("course") instanceof Course created) {
+            agent.setActiveCourseId(created.getId());
+        }
+        printResult(result);
     }
 
     private void upload(String args) {
@@ -141,7 +145,15 @@ public final class StudyCLI {
             out.println("Usage: upload <courseId> <path>");
             return;
         }
-        printResult(agent.upload(bits[0], bits[1]));
+        agent.setActiveCourseId(bits[0]);
+        Result result = agent.upload(bits[0], bits[1]);
+        if (result.isSuccess()) {
+            Object materialId = result.get("materialId");
+            if (materialId != null) {
+                agent.setActiveMaterialId(String.valueOf(materialId));
+            }
+        }
+        printResult(result);
     }
 
     private void listMaterials(String courseId) {

@@ -7,6 +7,7 @@ import java.util.Map;
 import studybuddy.domain.PlanSpec;
 import studybuddy.domain.StudyPlan;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 import studybuddy.progress.ProgressTracker;
 
 /** Builds a multi-session study plan (F06). */
@@ -37,11 +38,8 @@ public final class StudyPlanTool implements Tool {
         List<String> weak = progressTracker.weakTopics(courseId);
         PlanSpec spec = new PlanSpec(courseId, hours, exam, focus);
 
-        String prompt = """
-                Create a brief day-by-day study plan until %s.
-                Hours/day: %.1f. Focus: %s. Weak topics: %s.
-                Return lines: YYYY-MM-DD | topic | task | minutes
-                """.formatted(exam, hours, focus.isBlank() ? "general review" : focus, weak);
+        String prompt = PromptBuilder.buildPlanPrompt(
+                exam.toString(), hours, focus, weak.toString());
 
         try {
             String raw = ctx.getLlm().generate(prompt);

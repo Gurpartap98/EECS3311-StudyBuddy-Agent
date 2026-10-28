@@ -62,7 +62,11 @@ public final class StudyGUI {
         courseList = new JList<>(courseModel);
         courseList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         courseList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
+                if (!e.getValueIsAdjusting()) {
+                Course selected = selectedCourseOrNull();
+                if (selected != null) {
+                    agent.setActiveCourseId(selected.getId());
+                }
                 refreshMaterials();
             }
         });
@@ -149,7 +153,11 @@ public final class StudyGUI {
         }
         String code = JOptionPane.showInputDialog(frame, "Course code (optional):");
         String term = JOptionPane.showInputDialog(frame, "Term (optional):");
-        showResult(agent.createCourse(name, code == null ? "" : code, term == null ? "" : term));
+        Result created = agent.createCourse(name, code == null ? "" : code, term == null ? "" : term);
+        if (created.isSuccess() && created.get("course") instanceof Course course) {
+            agent.setActiveCourseId(course.getId());
+        }
+        showResult(created);
         refreshCourses();
     }
 
@@ -165,7 +173,12 @@ public final class StudyGUI {
         if (path == null || path.isBlank()) {
             return;
         }
-        showResult(agent.upload(course.getId(), path));
+        agent.setActiveCourseId(course.getId());
+        Result uploaded = agent.upload(course.getId(), path);
+        if (uploaded.isSuccess() && uploaded.get("materialId") != null) {
+            agent.setActiveMaterialId(String.valueOf(uploaded.get("materialId")));
+        }
+        showResult(uploaded);
         refreshMaterials();
     }
 
@@ -253,9 +266,16 @@ public final class StudyGUI {
     }
 
     private Course selectedCourse() {
+        Course course = selectedCourseOrNull();
+        if (course == null) {
+            JOptionPane.showMessageDialog(frame, "Select a course first.");
+        }
+        return course;
+    }
+
+    private Course selectedCourseOrNull() {
         int index = courseList.getSelectedIndex();
         if (index < 0) {
-            JOptionPane.showMessageDialog(frame, "Select a course first.");
             return null;
         }
         String id = courseModel.get(index).split(" ", 2)[0];
@@ -263,9 +283,18 @@ public final class StudyGUI {
     }
 
     private Material selectedMaterial() {
+        Material material = selectedMaterialOrNull();
+        if (material == null) {
+            JOptionPane.showMessageDialog(frame, "Select a material first.");
+        } else {
+            agent.setActiveMaterialId(material.getId());
+        }
+        return material;
+    }
+
+    private Material selectedMaterialOrNull() {
         int index = materialList.getSelectedIndex();
         if (index < 0) {
-            JOptionPane.showMessageDialog(frame, "Select a material first.");
             return null;
         }
         String id = materialModel.get(index).split(" ", 2)[0];

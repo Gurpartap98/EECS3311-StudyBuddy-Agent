@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import studybuddy.domain.Material;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 
 /**
  * Retrieves relevant material chunks then answers (F05).
@@ -42,15 +43,7 @@ public final class RetrievalTool implements Tool {
             context.append("### ").append(m.getTitle()).append('\n')
                     .append(truncate(m.getExtractedText(), 2000)).append("\n\n");
         }
-        String prompt = """
-                Answer the student question using ONLY the provided notes.
-                Cite material titles. If the notes do not contain the answer, say so.
-
-                QUESTION: %s
-
-                NOTES:
-                %s
-                """.formatted(question, context);
+        String prompt = PromptBuilder.buildQA(question, context.toString());
 
         try {
             String answer = ctx.getLlm().generate(prompt);

@@ -41,6 +41,8 @@ public final class AgentController {
     private final ProgressTracker progressTracker;
     private final QuizEngine quizEngine = new QuizEngine();
     private final ExplainTool explainTool = new ExplainTool();
+    private String activeCourseId = "";
+    private String activeMaterialId = "";
 
     public AgentController(DocumentStore store, LLMClient llm, ProgressTracker progressTracker) {
         this.store = Objects.requireNonNull(store, "store");
@@ -249,27 +251,138 @@ public final class AgentController {
         return quizEngine;
     }
 
-    /** F12 — multi-step NL command handling via Planner + ToolManager. */
+    public void setActiveCourseId(String courseId) {
+        this.activeCourseId = courseId == null ? "" : courseId;
+    }
+
+    public void setActiveMaterialId(String materialId) {
+        this.activeMaterialId = materialId == null ? "" : materialId;
+    }
+
+    public String getActiveCourseId() {
+        return activeCourseId;
+    }
+
+    public String getActiveMaterialId() {
+        return activeMaterialId;
+    }
+
+    /**
+     * F12 — multi-step NL command handling via Planner + ToolManager.
+     * Executes each planned tool when course/material context is available.
+     */
     public Result handleRequest(String text) {
-        List<Planner.PlannedStep> steps = planner.plan(text);
+        Planner.ParsedGoal parsed = planner.parse(text);
+        List<Planner.PlannedStep> steps = parsed.steps();
         if (steps.isEmpty()) {
             return Result.fail("Could not plan any tools for that request.");
         }
-        StringBuilder log = new StringBuilder("Plan:\n");
+
+        String courseId = firstNonBlank(parsed.courseId(), activeCourseId, firstCourseId());
+        String materialId = firstNonBlank(parsed.materialId(), activeMaterialId, firstMaterialId(courseId));
+
+        StringBuilder log = new StringBuilder("Plan (" + steps.size() + " step(s)):\n");
         for (Planner.PlannedStep step : steps) {
             log.append("- ").append(step.toolName()).append(": ").append(step.reason()).append('\n');
         }
-        // For scaffold: if the only step is retrieve, execute ask(); otherwise report the plan.
-        if (steps.size() == 1 && "retrieve".equals(steps.get(0).toolName())) {
-            Result answer = ask(text);
-            return Result.ok(
-                    log + "\n" + answer.getMessage(),
-                    Map.of("plan", steps, "answer", answer));
+
+        List<Result> executed = new ArrayList<>();
+        for (Planner.PlannedStep step : steps) {
+            Result stepResult = executePlannedStep(step.toolName(), text, courseId, materialId);
+            executed.add(stepResult);
+            log.append("\n[")
+                    .append(step.toolName())
+                    .append("] ")
+                    .append(stepResult.isSuccess() ? "OK" : "FAIL")
+                    .append(": ")
+                    .append(stepResult.getMessage())
+                    .append('\n');
+            if (!stepResult.isSuccess() && !"retrieve".equals(step.toolName())) {
+                // Continue after soft failures (e.g. missing LLM), but stop on hard missing context
+                if (stepResult.getMessage().contains("Select") || stepResult.getMessage().contains("not found")) {
+                    break;
+                }
+            }
         }
-        return Result.ok(
-                log + "\nUse the dedicated commands (summarize, concepts, quiz, ...) "
-                        + "with course/material IDs for multi-step tools in this scaffold.",
-                Map.of("plan", steps));
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("plan", steps);
+        data.put("results", executed);
+        data.put("courseId", courseId);
+        data.put("materialId", materialId);
+        boolean anyOk = executed.stream().anyMatch(Result::isSuccess);
+        return anyOk ? Result.ok(log.toString().trim(), data) : Result.fail(log.toString().trim());
+    }
+
+    private Result executePlannedStep(String tool, String text, String courseId, String materialId) {
+        return switch (tool) {
+            case "retrieve" -> ask(text, courseId);
+            case "summarize" -> {
+                if (materialId == null || materialId.isBlank()) {
+                    yield Result.fail("Select/upload a material first (need materialId for summarize).");
+                }
+                yield summarize(materialId);
+            }
+            case "concepts" -> {
+                if (materialId == null || materialId.isBlank()) {
+                    yield Result.fail("Select/upload a material first (need materialId for concepts).");
+                }
+                yield extractConcepts(materialId);
+            }
+            case "flashcards" -> {
+                if (materialId == null || materialId.isBlank()) {
+                    yield Result.fail("Select/upload a material first (need materialId for flashcards).");
+                }
+                yield generateFlashcards(materialId, 8);
+            }
+            case "quiz" -> {
+                if (courseId == null || courseId.isBlank()) {
+                    yield Result.fail("Create/select a course first (need courseId for quiz).");
+                }
+                yield generateQuiz(new QuizSpec(
+                        courseId,
+                        materialId == null ? "" : materialId,
+                        5,
+                        "medium",
+                        QuestionSpec.Kind.MCQ,
+                        ""));
+            }
+            case "plan" -> {
+                if (courseId == null || courseId.isBlank()) {
+                    yield Result.fail("Create/select a course first (need courseId for study plan).");
+                }
+                yield generatePlan(new PlanSpec(
+                        courseId, 2.0, java.time.LocalDate.now().plusWeeks(2), ""));
+            }
+            case "explain" -> Result.fail("Use grade <quizId> ... to explain missed answers (F09).");
+            default -> Result.fail("Unknown planned tool: " + tool);
+        };
+    }
+
+    private String firstCourseId() {
+        return store.listCourses().stream().map(Course::getId).findFirst().orElse("");
+    }
+
+    private String firstMaterialId(String courseId) {
+        if (courseId == null || courseId.isBlank()) {
+            return "";
+        }
+        return store.listMaterials(courseId).stream()
+                .map(studybuddy.domain.Material::getId)
+                .findFirst()
+                .orElse("");
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 
     private ToolContext ctx(Map<String, Object> params) {

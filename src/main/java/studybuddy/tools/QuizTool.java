@@ -9,6 +9,7 @@ import studybuddy.domain.QuestionSpec;
 import studybuddy.domain.Quiz;
 import studybuddy.domain.QuizSpec;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 import studybuddy.quiz.MCQQuestionFactory;
 import studybuddy.quiz.QuizFactory;
 import studybuddy.quiz.ShortAnswerQuestionFactory;
@@ -54,14 +55,8 @@ public final class QuizTool implements Tool {
         }
 
         QuizSpec spec = new QuizSpec(courseId, materialId, count, difficulty, kind, "");
-        String prompt = """
-                Generate %d %s study questions at %s difficulty from the notes.
-                For MCQ use lines: Q: ... | CHOICES: a) .. ; b) .. ; c) .. ; d) .. | ANSWER: a
-                For SHORT_ANSWER use lines: Q: ... | A: ...
-
-                NOTES:
-                %s
-                """.formatted(spec.getQuestionCount(), kind, difficulty, truncate(sourceText, 6000));
+        String prompt = PromptBuilder.buildQuizPrompt(
+                spec.getQuestionCount(), kind.name(), difficulty, sourceText);
 
         try {
             String raw = ctx.getLlm().generate(prompt);

@@ -6,6 +6,7 @@ import java.util.Map;
 import studybuddy.domain.Concept;
 import studybuddy.domain.Material;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 
 /** Extracts key concepts from a material (F04). */
 public final class ConceptTool implements Tool {
@@ -37,13 +38,7 @@ public final class ConceptTool implements Tool {
     }
 
     public String buildConceptPrompt(String text) {
-        return """
-                Extract key concepts from these notes.
-                Return one concept per line as: NAME — short gloss
-
-                NOTES:
-                %s
-                """.formatted(truncate(text, 6000));
+        return PromptBuilder.buildConceptPrompt(text);
     }
 
     private List<Concept> parseConcepts(String materialId, String raw) {
@@ -64,12 +59,5 @@ public final class ConceptTool implements Tool {
             }
         }
         return list;
-    }
-
-    private static String truncate(String text, int max) {
-        if (text == null) {
-            return "";
-        }
-        return text.length() <= max ? text : text.substring(0, max) + "\n...[truncated]";
     }
 }

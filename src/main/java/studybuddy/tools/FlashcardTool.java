@@ -6,6 +6,7 @@ import java.util.Map;
 import studybuddy.domain.Flashcard;
 import studybuddy.domain.Material;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 
 /** Generates flashcards from a material (F07). */
 public final class FlashcardTool implements Tool {
@@ -38,13 +39,7 @@ public final class FlashcardTool implements Tool {
     }
 
     public String buildFlashcardPrompt(String text, int n) {
-        return """
-                Create %d flashcards from these notes.
-                Format each card as: Q: ... | A: ...
-
-                NOTES:
-                %s
-                """.formatted(n, truncate(text, 6000));
+        return PromptBuilder.buildFlashcardPrompt(text, n);
     }
 
     private List<Flashcard> parseCards(String materialId, String raw) {
@@ -69,12 +64,5 @@ public final class FlashcardTool implements Tool {
             }
         }
         return cards;
-    }
-
-    private static String truncate(String text, int max) {
-        if (text == null) {
-            return "";
-        }
-        return text.length() <= max ? text : text.substring(0, max) + "\n...[truncated]";
     }
 }

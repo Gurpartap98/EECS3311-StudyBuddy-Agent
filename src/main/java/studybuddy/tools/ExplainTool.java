@@ -2,6 +2,7 @@ package studybuddy.tools;
 
 import java.util.Map;
 import studybuddy.llm.LLMException;
+import studybuddy.llm.PromptBuilder;
 
 /**
  * Explains incorrect quiz answers (F09).
@@ -20,13 +21,8 @@ public final class ExplainTool implements Tool {
         String correct = ctx.requireString("correct");
         String student = ctx.optionalString("student", "");
         try {
-            String viaLlm = ctx.getLlm().generate("""
-                    Explain why the correct answer is right and the student answer is wrong.
-                    Question: %s
-                    Correct: %s
-                    Student: %s
-                    Keep it under 120 words.
-                    """.formatted(promptText, correct, student));
+            String viaLlm = ctx.getLlm().generate(
+                    PromptBuilder.buildExplainPrompt(promptText, correct, student));
             return Result.ok(viaLlm, Map.of("explanation", viaLlm));
         } catch (LLMException ex) {
             String fallback = explain(promptText, correct, student);
