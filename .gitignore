@@ -30,3 +30,4 @@ STAGE2_AGENT_HANDOFF.md
 CLAUDE_HANDOFF_*
 *.pdf
 !stage2-report.pdf
+!data/samples/**/*.pdf

@@ -6,10 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import studybuddy.domain.Material;
 
 /**
- * Imports PDF/TXT/MD into a course (F02). PDF extraction is completed in a later commit.
+ * Imports PDF/TXT/MD into a course (F02).
  */
 public final class MaterialImportTool implements Tool {
 
@@ -37,7 +40,10 @@ public final class MaterialImportTool implements Tool {
             ctx.getStore().save(material);
             return Result.ok(
                     "Imported material " + material.getId(),
-                    Map.of("materialId", material.getId(), "chars", text.length()));
+                    Map.of(
+                            "materialId", material.getId(),
+                            "chars", text.length(),
+                            "source", path));
         } catch (IOException ex) {
             return Result.fail("Failed to import: " + ex.getMessage());
         }
@@ -46,14 +52,25 @@ public final class MaterialImportTool implements Tool {
     /** Helper used by {@link #execute(ToolContext)}. */
     public String extractText(String path) throws IOException {
         Path file = Path.of(path);
+        if (!Files.isRegularFile(file)) {
+            throw new IOException("File not found: " + path);
+        }
         String lower = file.getFileName().toString().toLowerCase(Locale.ROOT);
         if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".markdown")) {
             return Files.readString(file, StandardCharsets.UTF_8);
         }
         if (lower.endsWith(".pdf")) {
-            throw new IOException(
-                    "PDF extraction will be wired with PDFBox in a later commit: " + path);
+            return extractPdf(file);
         }
-        throw new IOException("Unsupported file type: " + path);
+        throw new IOException("Unsupported file type (use .pdf, .txt, or .md): " + path);
+    }
+
+    private String extractPdf(Path file) throws IOException {
+        try (PDDocument document = Loader.loadPDF(file.toFile())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setSortByPosition(true);
+            String text = stripper.getText(document);
+            return text == null ? "" : text.trim();
+        }
     }
 }
