@@ -98,4 +98,14 @@ public class DocumentStore {
     public List<Flashcard> listFlashcards(String materialId) {
         return List.copyOf(flashcardsByMaterial.getOrDefault(materialId, List.of()));
     }
+
+    public List<StudyPlan> listPlans(String courseId) {
+        return plans.values().stream()
+                .filter(p -> p.getCourseId().equals(courseId))
+                .toList();
+    }
+
+    public Optional<StudyPlan> findPlan(String id) {
+        return Optional.ofNullable(plans.get(id));
+    }
 }

@@ -6,6 +6,7 @@ import studybuddy.llm.LLMClient;
 import studybuddy.llm.LLMClientFactory;
 import studybuddy.progress.ProgressTracker;
 import studybuddy.store.DocumentStore;
+import studybuddy.store.JsonDocumentStore;
 import studybuddy.ui.StudyCLI;
 import studybuddy.ui.StudyGUI;
 
@@ -38,9 +39,10 @@ public final class StudyBuddyApp {
 
     static AgentController bootstrap() {
         AppConfig config = new AppConfig();
-        DocumentStore store = new DocumentStore();
+        DocumentStore store = new JsonDocumentStore(config.dataDir());
         ProgressTracker progress = new ProgressTracker();
         LLMClient llm = LLMClientFactory.fromConfig(config);
+        System.out.println("StudyBuddy data dir: " + config.dataDir());
         return new AgentController(store, llm, progress);
     }
 
