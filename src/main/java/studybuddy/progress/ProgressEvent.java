@@ -12,10 +12,14 @@ public final class ProgressEvent {
     private final Instant at;
 
     public ProgressEvent(String courseId, String topic, double scorePercent) {
+        this(courseId, topic, scorePercent, Instant.now());
+    }
+
+    public ProgressEvent(String courseId, String topic, double scorePercent, Instant at) {
         this.courseId = Objects.requireNonNull(courseId, "courseId");
         this.topic = topic == null ? "" : topic;
         this.scorePercent = scorePercent;
-        this.at = Instant.now();
+        this.at = at == null ? Instant.now() : at;
     }
 
     public String getCourseId() {

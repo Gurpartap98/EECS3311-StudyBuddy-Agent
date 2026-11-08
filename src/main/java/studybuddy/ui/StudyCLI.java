@@ -78,6 +78,7 @@ public final class StudyCLI {
                 case "grade" -> grade(args);
                 case "plan" -> plan(args);
                 case "weak" -> weak(args);
+                case "history" -> history(args);
                 case "nl" -> printResult(agent.handleRequest(args));
                 default -> printResult(agent.handleRequest(line));
             }
@@ -104,6 +105,7 @@ public final class StudyCLI {
                   grade <quizId> <a1,a2,...>   (answers by question order: a/b/c/d or text)
                   plan <courseId> [hours] [examDate]
                   weak <courseId>
+                  history [courseId]
                   nl <natural language request>
                   quit
                 """);
@@ -285,6 +287,20 @@ public final class StudyCLI {
         }
         List<String> weak = agent.getProgressTracker().weakTopics(courseId);
         out.println(weak.isEmpty() ? "(no weak topics yet — take a quiz first)" : weak);
+    }
+
+    private void history(String courseId) {
+        var events = courseId.isBlank()
+                ? agent.getProgressTracker().history()
+                : agent.getProgressTracker().historyForCourse(courseId);
+        if (events.isEmpty()) {
+            out.println("(no progress history yet)");
+            return;
+        }
+        for (var e : events) {
+            out.printf("%s | course=%s | topic=%s | %.0f%%%n",
+                    e.getAt(), e.getCourseId(), e.getTopic(), e.getScorePercent());
+        }
     }
 
     private void printResult(Result result) {

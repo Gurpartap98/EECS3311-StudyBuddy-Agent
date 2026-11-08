@@ -98,6 +98,7 @@ public final class StudyGUI {
         materialButtons.add(button("Demo Quiz", this::onDemoQuiz));
         materialButtons.add(button("Study Plan", this::onPlan));
         materialButtons.add(button("Weak Topics", this::onWeak));
+        materialButtons.add(button("History", this::onHistory));
         mid.add(materialButtons, BorderLayout.SOUTH);
 
         output = new JTextArea();
@@ -251,6 +252,23 @@ public final class StudyGUI {
             return;
         }
         append("Weak topics: " + agent.getProgressTracker().weakTopics(course.getId()));
+    }
+
+    private void onHistory() {
+        Course course = selectedCourseOrNull();
+        var events = course == null
+                ? agent.getProgressTracker().history()
+                : agent.getProgressTracker().historyForCourse(course.getId());
+        if (events.isEmpty()) {
+            append("(no progress history yet)");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Progress history:\n");
+        for (var e : events) {
+            sb.append(e.getAt()).append(" | ").append(e.getTopic())
+                    .append(" | ").append(String.format("%.0f", e.getScorePercent())).append("%\n");
+        }
+        append(sb.toString().trim());
     }
 
     private void onAskOrNl() {

@@ -40,7 +40,7 @@ public final class StudyBuddyApp {
     static AgentController bootstrap() {
         AppConfig config = new AppConfig();
         DocumentStore store = new JsonDocumentStore(config.dataDir());
-        ProgressTracker progress = new ProgressTracker();
+        ProgressTracker progress = new ProgressTracker(config.dataDir());
         LLMClient llm = LLMClientFactory.fromConfig(config);
         System.out.println("StudyBuddy data dir: " + config.dataDir());
         return new AgentController(store, llm, progress);
