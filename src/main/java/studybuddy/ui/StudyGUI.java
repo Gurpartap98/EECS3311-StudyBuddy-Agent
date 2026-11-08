@@ -217,7 +217,7 @@ public final class StudyGUI {
         Result result = agent.generateQuiz(spec);
         showResult(result);
         if (result.isSuccess() && result.get("quiz") instanceof Quiz quiz) {
-            new QuizView(frame).open(quiz);
+            openInteractiveQuiz(quiz);
         }
     }
 
@@ -229,15 +229,12 @@ public final class StudyGUI {
         Result result = agent.createDemoQuiz(course.getId());
         showResult(result);
         if (result.isSuccess() && result.get("quiz") instanceof Quiz quiz) {
-            new QuizView(frame).open(quiz);
-            // Auto-grade a mixed attempt so ProgressView / weak topics update (F09–F11 demo)
-            java.util.Map<String, String> answers = new java.util.LinkedHashMap<>();
-            var questions = quiz.getQuestions();
-            for (int i = 0; i < questions.size(); i++) {
-                answers.put(questions.get(i).getId(), i == 0 ? "b" : "a");
-            }
-            showResult(agent.gradeQuiz(quiz.getId(), answers));
+            openInteractiveQuiz(quiz);
         }
+    }
+
+    private void openInteractiveQuiz(Quiz quiz) {
+        new QuizView(frame).open(quiz, (quizId, answers) -> showResult(agent.gradeQuiz(quizId, answers)));
     }
 
     private void onPlan() {

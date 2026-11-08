@@ -74,6 +74,7 @@ public final class StudyCLI {
                 case "quiz" -> quiz(args);
                 case "demo-quiz" -> printResult(agent.createDemoQuiz(args));
                 case "quizzes" -> listQuizzes(args);
+                case "take-quiz" -> takeQuiz(args);
                 case "grade" -> grade(args);
                 case "plan" -> plan(args);
                 case "weak" -> weak(args);
@@ -99,6 +100,7 @@ public final class StudyCLI {
                   quiz <courseId> [materialId] [count]
                   demo-quiz <courseId>
                   quizzes <courseId>
+                  take-quiz <quizId>          (interactive prompts, then grades)
                   grade <quizId> <a1,a2,...>   (answers by question order: a/b/c/d or text)
                   plan <courseId> [hours] [examDate]
                   weak <courseId>
@@ -211,6 +213,37 @@ public final class StudyCLI {
                 out.printf("   %d. [%s] %s%n", i++, question.getType(), question.getPrompt());
             }
         }
+    }
+
+    private void takeQuiz(String quizId) {
+        if (quizId.isBlank()) {
+            out.println("Usage: take-quiz <quizId>");
+            return;
+        }
+        Quiz quiz = agent.getStore().findQuiz(quizId).orElse(null);
+        if (quiz == null) {
+            out.println("Quiz not found: " + quizId);
+            return;
+        }
+        out.println("Taking: " + quiz.getTitle() + " (" + quiz.size() + " questions)");
+        Map<String, String> answers = new LinkedHashMap<>();
+        int n = 1;
+        for (Question question : quiz.getQuestions()) {
+            out.println();
+            out.println(n++ + ". [" + question.getType() + "] " + question.getPrompt());
+            if (question instanceof studybuddy.domain.MCQQuestion mcq) {
+                char label = 'a';
+                for (String choice : mcq.getChoices()) {
+                    out.println("   " + label++ + ") " + choice);
+                }
+                out.print("Your answer (a/b/c/...): ");
+            } else {
+                out.print("Your answer: ");
+            }
+            String ans = in.hasNextLine() ? in.nextLine().trim() : "";
+            answers.put(question.getId(), ans);
+        }
+        printResult(agent.gradeQuiz(quizId, answers));
     }
 
     private void grade(String args) {
