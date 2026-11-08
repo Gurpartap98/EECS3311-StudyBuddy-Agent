@@ -73,6 +73,7 @@ public final class StudyCLI {
                 case "concepts" -> printResult(agent.extractConcepts(args));
                 case "ask" -> printResult(agent.ask(args));
                 case "flashcards" -> flashcards(args);
+                case "review" -> reviewFlashcards(args);
                 case "quiz" -> quiz(args);
                 case "demo-quiz" -> printResult(agent.createDemoQuiz(args));
                 case "quizzes" -> listQuizzes(args);
@@ -102,6 +103,7 @@ public final class StudyCLI {
                   concepts <materialId>
                   ask <question>
                   flashcards <materialId> [count]
+                  review <materialId>         (flip through saved flashcards)
                   quiz <courseId> [materialId] [count]
                   demo-quiz <courseId>
                   quizzes <courseId>
@@ -196,6 +198,36 @@ public final class StudyCLI {
         }
         int n = bits.length > 1 ? Integer.parseInt(bits[1]) : 8;
         printResult(agent.generateFlashcards(bits[0], n));
+    }
+
+    private void reviewFlashcards(String materialId) {
+        if (materialId.isBlank()) {
+            out.println("Usage: review <materialId>");
+            return;
+        }
+        var cards = agent.getStore().listFlashcards(materialId);
+        if (cards.isEmpty()) {
+            out.println("(no flashcards — run flashcards <materialId> first)");
+            return;
+        }
+        out.println("Reviewing " + cards.size() + " cards. Press Enter to flip/next, 'q' to stop.");
+        for (int i = 0; i < cards.size(); i++) {
+            var card = cards.get(i);
+            out.println();
+            out.println("Q" + (i + 1) + ": " + card.getFront());
+            out.print("(Enter to show answer) ");
+            String line = in.hasNextLine() ? in.nextLine() : "";
+            if ("q".equalsIgnoreCase(line.trim())) {
+                break;
+            }
+            out.println("A: " + card.getBack());
+            out.print("(Enter for next) ");
+            line = in.hasNextLine() ? in.nextLine() : "";
+            if ("q".equalsIgnoreCase(line.trim())) {
+                break;
+            }
+        }
+        out.println("Review done.");
     }
 
     private void quiz(String args) {

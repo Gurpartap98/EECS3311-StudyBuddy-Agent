@@ -237,7 +237,12 @@ public final class StudyGUI {
         if (material == null) {
             return;
         }
-        showResult(agent.generateFlashcards(material.getId(), 8));
+        Result result = agent.generateFlashcards(material.getId(), 8);
+        showResult(result);
+        var cards = agent.getStore().listFlashcards(material.getId());
+        if (!cards.isEmpty()) {
+            new FlashcardReview(frame).open(cards);
+        }
     }
 
     private void onQuiz() {
