@@ -91,6 +91,32 @@ public final class AgentController {
         }
     }
 
+    /** F01 — rename an existing course. */
+    public Result renameCourse(String courseId, String newName) {
+        Course course = store.findCourse(courseId).orElse(null);
+        if (course == null) {
+            return Result.fail("Course not found: " + courseId);
+        }
+        try {
+            course.setName(newName);
+            store.save(course);
+            return Result.ok("Renamed course to " + course.getName(), Map.of("course", course));
+        } catch (IllegalArgumentException ex) {
+            return Result.fail(ex.getMessage());
+        }
+    }
+
+    /** F01 — archive a course (soft delete). */
+    public Result archiveCourse(String courseId) {
+        Course course = store.findCourse(courseId).orElse(null);
+        if (course == null) {
+            return Result.fail("Course not found: " + courseId);
+        }
+        course.archive();
+        store.save(course);
+        return Result.ok("Archived course " + course.getName(), Map.of("course", course));
+    }
+
     public List<Course> listCourses() {
         return store.listCourses();
     }

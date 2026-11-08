@@ -65,6 +65,8 @@ public final class StudyCLI {
                 case "help" -> printHelp();
                 case "courses" -> listCourses();
                 case "course" -> createCourse(args);
+                case "rename" -> renameCourse(args);
+                case "archive" -> printResult(agent.archiveCourse(args));
                 case "upload" -> upload(args);
                 case "materials" -> listMaterials(args);
                 case "summarize" -> printResult(agent.summarize(args));
@@ -92,6 +94,8 @@ public final class StudyCLI {
                 Commands:
                   courses
                   course <name> [|code|term]
+                  rename <courseId> <new name>
+                  archive <courseId>
                   upload <courseId> <path>
                   materials <courseId>
                   summarize <materialId>
@@ -141,6 +145,15 @@ public final class StudyCLI {
             agent.setActiveCourseId(created.getId());
         }
         printResult(result);
+    }
+
+    private void renameCourse(String args) {
+        String[] bits = args.split("\\s+", 2);
+        if (bits.length < 2) {
+            out.println("Usage: rename <courseId> <new name>");
+            return;
+        }
+        printResult(agent.renameCourse(bits[0], bits[1]));
     }
 
     private void upload(String args) {

@@ -4,10 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.io.File;
 import java.time.LocalDate;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -20,6 +22,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import studybuddy.agent.AgentController;
 import studybuddy.domain.Course;
 import studybuddy.domain.Material;
@@ -81,6 +84,8 @@ public final class StudyGUI {
 
         JPanel courseButtons = new JPanel(new GridLayout(0, 1, 4, 4));
         courseButtons.add(button("New Course", this::onNewCourse));
+        courseButtons.add(button("Rename Course", this::onRenameCourse));
+        courseButtons.add(button("Archive Course", this::onArchiveCourse));
         courseButtons.add(button("Upload Material", this::onUpload));
         courseButtons.add(button("Refresh", this::refreshCourses));
         left.add(courseButtons, BorderLayout.SOUTH);
@@ -162,18 +167,46 @@ public final class StudyGUI {
         refreshCourses();
     }
 
+    private void onRenameCourse() {
+        Course course = selectedCourse();
+        if (course == null) {
+            return;
+        }
+        String name = JOptionPane.showInputDialog(frame, "New course name:", course.getName());
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        showResult(agent.renameCourse(course.getId(), name));
+        refreshCourses();
+    }
+
+    private void onArchiveCourse() {
+        Course course = selectedCourse();
+        if (course == null) {
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(
+                frame, "Archive " + course.getName() + "?", "Archive course", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        showResult(agent.archiveCourse(course.getId()));
+        refreshCourses();
+    }
+
     private void onUpload() {
         Course course = selectedCourse();
         if (course == null) {
             return;
         }
-        String path = JOptionPane.showInputDialog(
-                frame,
-                "Path to TXT/MD file:",
-                "data/samples/os-scheduling.txt");
-        if (path == null || path.isBlank()) {
+        JFileChooser chooser = new JFileChooser(new File("data/samples"));
+        chooser.setDialogTitle("Upload learning material");
+        chooser.setFileFilter(new FileNameExtensionFilter("Notes (PDF, TXT, MD)", "pdf", "txt", "md", "markdown"));
+        int result = chooser.showOpenDialog(frame);
+        if (result != JFileChooser.APPROVE_OPTION) {
             return;
         }
+        String path = chooser.getSelectedFile().getAbsolutePath();
         agent.setActiveCourseId(course.getId());
         Result uploaded = agent.upload(course.getId(), path);
         if (uploaded.isSuccess() && uploaded.get("materialId") != null) {
