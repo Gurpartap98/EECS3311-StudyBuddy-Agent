@@ -8,7 +8,7 @@ AI study assistant that plans multi-step workflows over the student’s own note
 ## Stages
 
 - **Stage 1 (Design)** — [`stage1/Stage1_Design_Report.md`](stage1/Stage1_Design_Report.md) and [`stage1/diagrams/`](stage1/diagrams/)
-- **Stage 2 (Implementation)** — Java Maven app under `src/main/java/studybuddy/` (in progress)
+- **Stage 2 (Implementation)** — Java Maven app + [`stage2/stage2-report.md`](stage2/stage2-report.md) (export to PDF/Word as `stage2-report`)
 - Stage 3 (Testing) — forthcoming
 
 ## Requirements
@@ -27,22 +27,27 @@ cp .env.example .env
 ## Run
 
 ```bash
-mvn -q compile
+mvn -q test
 mvn -q exec:java -Dexec.args="cli"   # interactive CLI
 mvn -q exec:java -Dexec.args="gui"   # Swing GUI
 ```
 
-CLI quick start:
+### CLI demo script (no API key required)
 
 ```text
 course EECS 3311|EECS3311|FW26
 upload <courseId> data/samples/os-scheduling.txt
 materials <courseId>
-ask What is Round Robin scheduling?
+demo-quiz <courseId>
+quizzes <courseId>
+take-quiz <quizId>
+weak <courseId>
+history <courseId>
+plan <courseId>
+nl What is Round Robin scheduling?
 ```
 
-AI features (summarize / concepts / quiz / flashcards) need a configured LLM in `.env`.
-Deterministic features (courses, upload TXT/MD, weak-topic stats, plan fallback) work without a key.
+With a Groq key, also try: `summarize`, `concepts`, `flashcards`, `review`, AI `quiz`, and multi-step `nl summarize then make flashcards`.
 
 ### Free LLM setup (recommended: Groq)
 
@@ -55,25 +60,36 @@ Deterministic features (courses, upload TXT/MD, weak-topic stats, plan fallback)
    LLM_MODEL=llama-3.1-8b-instant
    ```
 4. Run CLI/GUI — startup prints `StudyBuddy LLM: groq/...`
+5. After AI calls, run `ailog` or inspect `data/ai-usage.log` for the Stage 2 cost log
 
-Gemini: set `LLM_PROVIDER=gemini` and a Google AI Studio key.  
-Ollama: set `LLM_PROVIDER=ollama` (no API key; local server required).  
-Missing/invalid key falls back to `stub/unconfigured` so the app still starts.
+Gemini: `LLM_PROVIDER=gemini` + Google AI Studio key.  
+OpenRouter: `LLM_PROVIDER=openrouter`.  
+Ollama: `LLM_PROVIDER=ollama` (local).  
+Missing key → `stub/unconfigured` (deterministic features still work).
 
 ## Package layout
 
 ```
 src/main/java/studybuddy/
-  ui/         StudyGUI, StudyCLI, QuizView, ProgressView
+  ui/         StudyGUI, StudyCLI, QuizView, ProgressView, FlashcardReview
   agent/      AgentController (Facade), Planner, ToolManager
   tools/      Tool, ToolContext, Result, *Tool
-  llm/        LLMClient (Strategy), OllamaClient / cloud clients, PromptBuilder
+  llm/        LLMClient (Strategy), cloud/Ollama clients, PromptBuilder, AiUsageLog
   quiz/       QuizFactory (Factory Method), QuizEngine
   domain/     Course, Material, Concept, Flashcard, Question, ...
-  store/      DocumentStore
+  store/      DocumentStore, JsonDocumentStore
   progress/   ProgressTracker (Observer subject)
 ```
 
+## Stage 2 submission checklist
+
+1. Source on this public GitHub repo  
+2. README (this file)  
+3. `.env.example` only — never commit `.env`  
+4. `stage2/stage2-report.md` → export **`stage2-report.pdf`** (or Word)  
+5. Demo videos for **every** feature (GUI + CLI collectively), links in the report  
+6. Weekly code commits for Periods 1–3  
+
 ## Stage 1 diagrams
 
-UMLet PNG + `.uxf` sources are in [`stage1/diagrams/`](stage1/diagrams/). Sequence coverage for F01/F04/F06/F07 is being completed from Stage 1 feedback during Stage 2.
+UMLet PNG + `.uxf` sources are in [`stage1/diagrams/`](stage1/diagrams/).

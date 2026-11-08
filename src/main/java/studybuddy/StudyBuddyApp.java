@@ -1,6 +1,7 @@
 package studybuddy;
 
 import studybuddy.agent.AgentController;
+import studybuddy.llm.AiUsageLog;
 import studybuddy.llm.AppConfig;
 import studybuddy.llm.LLMClient;
 import studybuddy.llm.LLMClientFactory;
@@ -42,6 +43,7 @@ public final class StudyBuddyApp {
         DocumentStore store = new JsonDocumentStore(config.dataDir());
         ProgressTracker progress = new ProgressTracker(config.dataDir());
         LLMClient llm = LLMClientFactory.fromConfig(config);
+        AiUsageLog.get().setLogFile(config.dataDir().resolve("ai-usage.log"));
         System.out.println("StudyBuddy data dir: " + config.dataDir());
         return new AgentController(store, llm, progress);
     }

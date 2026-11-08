@@ -82,6 +82,7 @@ public final class StudyCLI {
                 case "plan" -> plan(args);
                 case "weak" -> weak(args);
                 case "history" -> history(args);
+                case "ailog" -> out.println(studybuddy.llm.AiUsageLog.get().summary());
                 case "nl" -> printResult(agent.handleRequest(args));
                 default -> printResult(agent.handleRequest(line));
             }
@@ -112,6 +113,7 @@ public final class StudyCLI {
                   plan <courseId> [hours] [examDate]
                   weak <courseId>
                   history [courseId]
+                  ailog
                   nl <natural language request>
                   quit
                 """);
