@@ -97,7 +97,6 @@ public final class StudyGUI {
         courseButtons.add(button("Archive Course", this::onArchiveCourse));
         courseButtons.add(button("Delete Course", this::onDeleteCourse));
         courseButtons.add(button("Upload Material", this::onUpload));
-        courseButtons.add(button("Upload Sample Notes", this::onUploadSample));
         courseButtons.add(button("Refresh", this::refreshCourses));
         left.add(courseButtons, BorderLayout.SOUTH);
 
@@ -155,7 +154,7 @@ public final class StudyGUI {
         frame.setVisible(true);
 
         refreshCourses();
-        append("StudyBuddy GUI ready. Create a course, upload sample notes, then try Demo Quiz / Study Plan.");
+        append("StudyBuddy GUI ready. Create a course, Upload Material (.txt / .md / .pdf), then try Demo Quiz / Study Plan.");
     }
 
     private JButton button(String label, Runnable action) {
@@ -251,35 +250,15 @@ public final class StudyGUI {
         chooser.setFileFilter(new FileNameExtensionFilter("Notes (PDF, TXT, MD)", "pdf", "txt", "md", "markdown"));
         int result = chooser.showOpenDialog(frame);
         if (result != JFileChooser.APPROVE_OPTION) {
-            append("Upload cancelled (no file chosen). Tip: use Upload Sample Notes instead.");
+            append("Upload cancelled (no file chosen).");
             return;
         }
         File chosen = chooser.getSelectedFile();
         if (chosen == null) {
-            append("Upload cancelled: file was null. Tip: use Upload Sample Notes.");
+            append("Upload cancelled: no file selected.");
             return;
         }
         importPath(course, chosen.getAbsolutePath());
-    }
-
-    /** One-click F02 demo path — avoids flaky Linux file dialogs. */
-    private void onUploadSample() {
-        Course course = selectedCourse();
-        if (course == null) {
-            return;
-        }
-        File sample = new File(resolveSampleDir(), "os-scheduling.txt");
-        if (!sample.isFile()) {
-            showResult(Result.fail("Sample file missing: " + sample.getAbsolutePath()));
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Could not find:\n" + sample.getAbsolutePath(),
-                    "Sample missing",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        append("Uploading sample notes: " + sample.getAbsolutePath());
-        importPath(course, sample.getAbsolutePath());
     }
 
     private void importPath(Course course, String path) {
