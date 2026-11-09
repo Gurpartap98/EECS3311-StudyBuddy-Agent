@@ -97,6 +97,7 @@ public final class StudyGUI {
         mid.add(new JScrollPane(materialList), BorderLayout.CENTER);
 
         JPanel materialButtons = new JPanel(new GridLayout(0, 2, 4, 4));
+        materialButtons.add(button("View Material", this::onViewMaterial));
         materialButtons.add(button("Summarize", this::onSummarize));
         materialButtons.add(button("Concepts", this::onConcepts));
         materialButtons.add(button("Flashcards", this::onFlashcards));
@@ -247,17 +248,67 @@ public final class StudyGUI {
         if (!materialId.isBlank()) {
             agent.setActiveMaterialId(materialId);
         }
-        // File chooser can clear list selection on Linux — restore course + refresh by id
+        int count = agent.getStore().listMaterials(courseId).size();
+        Material imported = materialId.isBlank()
+                ? null
+                : agent.getStore().findMaterial(materialId).orElse(null);
+        if (imported != null) {
+            append("Imported file stored for this course (not a text editor).\n"
+                    + "Title: " + imported.getTitle() + "\n"
+                    + "Chars: " + imported.getExtractedText().length() + "\n"
+                    + "Preview:\n"
+                    + preview(imported.getExtractedText(), 280));
+        }
+        JOptionPane.showMessageDialog(
+                frame,
+                "Upload saved inside StudyBuddy.\n"
+                        + "You should see the file name under Materials.\n"
+                        + "Use View Material to read the text.\n"
+                        + "Count for this course: " + count,
+                "Upload OK",
+                JOptionPane.INFORMATION_MESSAGE);
+        // Refresh AFTER dialog — Linux file/dialog focus can clear selection mid-refresh
         selectCourseInList(courseId);
         refreshMaterialsForCourse(courseId);
         selectMaterialInList(materialId);
-        int count = agent.getStore().listMaterials(courseId).size();
+        materialList.revalidate();
+        materialList.repaint();
+    }
+
+    private void onViewMaterial() {
+        Material material = selectedMaterial();
+        if (material == null) {
+            // Fallback: show first material on active course so demos aren't blocked
+            String courseId = agent.getActiveCourseId();
+            var list = courseId == null || courseId.isBlank()
+                    ? java.util.List.<Material>of()
+                    : agent.getStore().listMaterials(courseId);
+            if (list.isEmpty()) {
+                return;
+            }
+            material = list.get(0);
+            selectMaterialInList(material.getId());
+        }
+        JTextArea area = new JTextArea(material.getExtractedText());
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setCaretPosition(0);
+        JScrollPane scroll = new JScrollPane(area);
+        scroll.setPreferredSize(new Dimension(560, 420));
         JOptionPane.showMessageDialog(
                 frame,
-                "Uploaded successfully.\nMaterials for this course: " + count
-                        + (materialId.isBlank() ? "" : ("\nNew id: " + materialId)),
-                "Upload OK",
-                JOptionPane.INFORMATION_MESSAGE);
+                scroll,
+                "View: " + material.getTitle(),
+                JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private static String preview(String text, int max) {
+        if (text == null || text.isBlank()) {
+            return "(empty)";
+        }
+        String trimmed = text.trim().replaceAll("\\s+", " ");
+        return trimmed.length() <= max ? trimmed : trimmed.substring(0, max) + "...";
     }
 
     private void onSummarize() {
@@ -370,19 +421,20 @@ public final class StudyGUI {
         return course;
     }
 
+    private static final String LIST_SEP = " | ";
+
     private Course selectedCourseOrNull() {
         int index = courseList.getSelectedIndex();
         if (index < 0) {
             return null;
         }
-        String id = courseModel.get(index).split(" ", 2)[0];
-        return agent.getStore().findCourse(id).orElse(null);
+        return agent.getStore().findCourse(listId(courseModel.get(index))).orElse(null);
     }
 
     private Material selectedMaterial() {
         Material material = selectedMaterialOrNull();
         if (material == null) {
-            JOptionPane.showMessageDialog(frame, "Select a material first.");
+            JOptionPane.showMessageDialog(frame, "Select a material first (middle list).");
         } else {
             agent.setActiveMaterialId(material.getId());
         }
@@ -394,8 +446,16 @@ public final class StudyGUI {
         if (index < 0) {
             return null;
         }
-        String id = materialModel.get(index).split(" ", 2)[0];
-        return agent.getStore().findMaterial(id).orElse(null);
+        return agent.getStore().findMaterial(listId(materialModel.get(index))).orElse(null);
+    }
+
+    private static String listId(String row) {
+        int cut = row.indexOf(LIST_SEP);
+        return cut < 0 ? row.split("\\s+", 2)[0] : row.substring(0, cut).trim();
+    }
+
+    private static String listRow(String id, String label) {
+        return id + LIST_SEP + label;
     }
 
     private void refreshCourses() {
@@ -403,7 +463,7 @@ public final class StudyGUI {
         courseModel.clear();
         // Hide archived courses so Archive feels like remove for demos
         for (Course c : agent.listActiveCourses()) {
-            courseModel.addElement(c.getId() + "  " + c.getName());
+            courseModel.addElement(listRow(c.getId(), c.getName()));
         }
         if (keepId != null && !keepId.isBlank()) {
             selectCourseInList(keepId);
@@ -432,7 +492,7 @@ public final class StudyGUI {
             return;
         }
         for (Material m : agent.getStore().listMaterials(courseId)) {
-            materialModel.addElement(m.getId() + "  " + m.getTitle());
+            materialModel.addElement(listRow(m.getId(), m.getTitle()));
         }
     }
 
@@ -441,7 +501,7 @@ public final class StudyGUI {
             return;
         }
         for (int i = 0; i < courseModel.size(); i++) {
-            if (courseModel.get(i).startsWith(courseId)) {
+            if (listId(courseModel.get(i)).equals(courseId)) {
                 courseList.setSelectedIndex(i);
                 agent.setActiveCourseId(courseId);
                 return;
@@ -454,7 +514,7 @@ public final class StudyGUI {
             return;
         }
         for (int i = 0; i < materialModel.size(); i++) {
-            if (materialModel.get(i).startsWith(materialId)) {
+            if (listId(materialModel.get(i)).equals(materialId)) {
                 materialList.setSelectedIndex(i);
                 agent.setActiveMaterialId(materialId);
                 return;
