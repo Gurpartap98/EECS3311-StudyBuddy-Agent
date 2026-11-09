@@ -106,7 +106,7 @@ public final class AgentController {
         }
     }
 
-    /** F01 — archive a course (soft delete). */
+    /** F01 — archive a course (soft delete; hidden from default GUI list). */
     public Result archiveCourse(String courseId) {
         Course course = store.findCourse(courseId).orElse(null);
         if (course == null) {
@@ -117,8 +117,26 @@ public final class AgentController {
         return Result.ok("Archived course " + course.getName(), Map.of("course", course));
     }
 
+    /** F01 — permanently delete a course and its materials. */
+    public Result deleteCourse(String courseId) {
+        Course course = store.findCourse(courseId).orElse(null);
+        if (course == null) {
+            return Result.fail("Course not found: " + courseId);
+        }
+        String name = course.getName();
+        if (!store.deleteCourse(courseId)) {
+            return Result.fail("Could not delete course: " + courseId);
+        }
+        return Result.ok("Deleted course " + name, Map.of("courseId", courseId));
+    }
+
     public List<Course> listCourses() {
         return store.listCourses();
+    }
+
+    /** Active (non-archived) courses for the GUI list. */
+    public List<Course> listActiveCourses() {
+        return store.listCourses().stream().filter(c -> !c.isArchived()).toList();
     }
 
     /** F02 — upload material via MaterialImportTool.execute. */

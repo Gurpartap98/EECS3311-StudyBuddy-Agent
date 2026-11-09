@@ -67,6 +67,7 @@ public final class StudyCLI {
                 case "course" -> createCourse(args);
                 case "rename" -> renameCourse(args);
                 case "archive" -> printResult(agent.archiveCourse(args));
+                case "delete" -> printResult(agent.deleteCourse(args));
                 case "upload" -> upload(args);
                 case "materials" -> listMaterials(args);
                 case "summarize" -> printResult(agent.summarize(args));
@@ -98,6 +99,7 @@ public final class StudyCLI {
                   course <name> [|code|term]
                   rename <courseId> <new name>
                   archive <courseId>
+                  delete <courseId>
                   upload <courseId> <path>
                   materials <courseId>
                   summarize <materialId>

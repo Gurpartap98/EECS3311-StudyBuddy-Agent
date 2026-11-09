@@ -86,6 +86,7 @@ public final class StudyGUI {
         courseButtons.add(button("New Course", this::onNewCourse));
         courseButtons.add(button("Rename Course", this::onRenameCourse));
         courseButtons.add(button("Archive Course", this::onArchiveCourse));
+        courseButtons.add(button("Delete Course", this::onDeleteCourse));
         courseButtons.add(button("Upload Material", this::onUpload));
         courseButtons.add(button("Refresh", this::refreshCourses));
         left.add(courseButtons, BorderLayout.SOUTH);
@@ -186,11 +187,31 @@ public final class StudyGUI {
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(
-                frame, "Archive " + course.getName() + "?", "Archive course", JOptionPane.YES_NO_OPTION);
+                frame,
+                "Archive " + course.getName() + "?\n(It will disappear from this list.)",
+                "Archive course",
+                JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
         showResult(agent.archiveCourse(course.getId()));
+        refreshCourses();
+    }
+
+    private void onDeleteCourse() {
+        Course course = selectedCourse();
+        if (course == null) {
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(
+                frame,
+                "Permanently DELETE " + course.getName() + " and its materials?",
+                "Delete course",
+                JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        showResult(agent.deleteCourse(course.getId()));
         refreshCourses();
     }
 
@@ -209,11 +230,25 @@ public final class StudyGUI {
         String path = chooser.getSelectedFile().getAbsolutePath();
         agent.setActiveCourseId(course.getId());
         Result uploaded = agent.upload(course.getId(), path);
-        if (uploaded.isSuccess() && uploaded.get("materialId") != null) {
+        showResult(uploaded);
+        if (!uploaded.isSuccess()) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    uploaded.getMessage()
+                            + "\n\nTip: use data/samples/os-scheduling.txt if PDF text extraction fails.",
+                    "Upload failed",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (uploaded.get("materialId") != null) {
             agent.setActiveMaterialId(String.valueOf(uploaded.get("materialId")));
         }
-        showResult(uploaded);
         refreshMaterials();
+        JOptionPane.showMessageDialog(
+                frame,
+                "Uploaded successfully.\nSelect the material in the middle list if needed.",
+                "Upload OK",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void onSummarize() {
@@ -356,7 +391,8 @@ public final class StudyGUI {
 
     private void refreshCourses() {
         courseModel.clear();
-        for (Course c : agent.listCourses()) {
+        // Hide archived courses so Archive feels like remove for demos
+        for (Course c : agent.listActiveCourses()) {
             courseModel.addElement(c.getId() + "  " + c.getName());
         }
         refreshMaterials();

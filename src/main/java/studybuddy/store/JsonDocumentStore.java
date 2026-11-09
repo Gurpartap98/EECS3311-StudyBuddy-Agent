@@ -92,6 +92,15 @@ public final class JsonDocumentStore extends DocumentStore {
         persist();
     }
 
+    @Override
+    public boolean deleteCourse(String courseId) {
+        boolean deleted = super.deleteCourse(courseId);
+        if (deleted) {
+            persist();
+        }
+        return deleted;
+    }
+
     private void persist() {
         if (loading) {
             return;

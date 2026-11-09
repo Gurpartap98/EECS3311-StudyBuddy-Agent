@@ -31,6 +31,27 @@ public class DocumentStore {
         return course;
     }
 
+    /** Permanently remove a course and its materials from the store. */
+    public boolean deleteCourse(String courseId) {
+        Objects.requireNonNull(courseId, "courseId");
+        Course removed = courses.remove(courseId);
+        if (removed == null) {
+            return false;
+        }
+        List<String> materialIds = materials.values().stream()
+                .filter(m -> m.getCourseId().equals(courseId))
+                .map(Material::getId)
+                .toList();
+        for (String materialId : materialIds) {
+            materials.remove(materialId);
+            conceptsByMaterial.remove(materialId);
+            flashcardsByMaterial.remove(materialId);
+        }
+        quizzes.entrySet().removeIf(e -> e.getValue().getCourseId().equals(courseId));
+        plans.entrySet().removeIf(e -> e.getValue().getCourseId().equals(courseId));
+        return true;
+    }
+
     public Material save(Material material) {
         Objects.requireNonNull(material, "material");
         materials.put(material.getId(), material);
