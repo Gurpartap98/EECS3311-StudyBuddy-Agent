@@ -46,15 +46,41 @@ public final class StudyPlanTool implements Tool {
             List<StudyPlan.Session> sessions = parseSessions(raw, exam, hours, weak, focus);
             StudyPlan plan = new StudyPlan(courseId, exam, hours, sessions);
             ctx.getStore().save(plan);
-            return Result.ok("Saved plan " + plan.getId(), Map.of("plan", plan, "raw", raw));
+            return Result.ok(formatPlanMessage(plan, weak), Map.of("plan", plan, "raw", raw));
         } catch (LLMException ex) {
+            // Hybrid F06: deterministic fallback is a valid success path without an API key
             List<StudyPlan.Session> sessions = fallbackSessions(exam, hours, weak, focus);
             StudyPlan plan = new StudyPlan(courseId, exam, hours, sessions);
             ctx.getStore().save(plan);
-            return Result.ok(
-                    "Saved deterministic plan " + plan.getId() + " (LLM unavailable)",
-                    Map.of("plan", plan, "llmError", ex.getMessage()));
+            return Result.ok(formatPlanMessage(plan, weak), Map.of("plan", plan));
         }
+    }
+
+    private static String formatPlanMessage(StudyPlan plan, List<String> weak) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Study plan ready with ")
+                .append(plan.getSessions().size())
+                .append(" sessions");
+        if (plan.getExamDate() != null) {
+            sb.append(" (through ").append(plan.getExamDate()).append(')');
+        }
+        if (!weak.isEmpty()) {
+            sb.append(". Focus on weak topics: ").append(weak);
+        }
+        sb.append('.');
+        for (StudyPlan.Session s : plan.getSessions()) {
+            sb.append('\n')
+                    .append("- ")
+                    .append(s.date())
+                    .append(": ")
+                    .append(s.focusTopic())
+                    .append(" — ")
+                    .append(s.task())
+                    .append(" (")
+                    .append(s.minutes())
+                    .append(" min)");
+        }
+        return sb.toString();
     }
 
     private List<StudyPlan.Session> parseSessions(

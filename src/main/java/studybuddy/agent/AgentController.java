@@ -85,7 +85,7 @@ public final class AgentController {
         try {
             Course course = new Course(name, code, term);
             store.save(course);
-            return Result.ok("Created course " + course.getId(), Map.of("course", course));
+            return Result.ok("Created course \"" + course.getName() + "\"", Map.of("course", course));
         } catch (IllegalArgumentException ex) {
             return Result.fail(ex.getMessage());
         }
@@ -231,7 +231,7 @@ public final class AgentController {
         Quiz quiz = new Quiz(courseId, "Demo CPU Scheduling Quiz", questions);
         store.save(quiz);
         return Result.ok(
-                "Created demo quiz " + quiz.getId() + " with " + quiz.size() + " MCQ questions",
+                "Created demo quiz \"" + quiz.getTitle() + "\" with " + quiz.size() + " MCQ questions",
                 Map.of("quiz", quiz));
     }
 

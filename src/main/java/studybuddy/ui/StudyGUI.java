@@ -6,6 +6,8 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.io.File;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -30,10 +32,12 @@ import studybuddy.domain.PlanSpec;
 import studybuddy.domain.QuestionSpec;
 import studybuddy.domain.Quiz;
 import studybuddy.domain.QuizSpec;
+import studybuddy.domain.StudyPlan;
 import studybuddy.tools.Result;
 
 /**
  * Swing GUI view (MVC). All actions call {@link AgentController} facade methods.
+ * Lists show friendly names only; IDs are kept in parallel lists.
  */
 public final class StudyGUI {
 
@@ -43,6 +47,8 @@ public final class StudyGUI {
     private JFrame frame;
     private final DefaultListModel<String> courseModel = new DefaultListModel<>();
     private final DefaultListModel<String> materialModel = new DefaultListModel<>();
+    private final List<String> courseIds = new ArrayList<>();
+    private final List<String> materialIds = new ArrayList<>();
     private JList<String> courseList;
     private JList<String> materialList;
     private JTextArea output;
@@ -65,7 +71,7 @@ public final class StudyGUI {
         courseList = new JList<>(courseModel);
         courseList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         courseList.addListSelectionListener(e -> {
-                if (!e.getValueIsAdjusting()) {
+            if (!e.getValueIsAdjusting()) {
                 Course selected = selectedCourseOrNull();
                 if (selected != null) {
                     agent.setActiveCourseId(selected.getId());
@@ -145,7 +151,7 @@ public final class StudyGUI {
         frame.setVisible(true);
 
         refreshCourses();
-        append("StudyBuddy GUI ready. Create a course, upload sample notes, then try Ask / NL.");
+        append("StudyBuddy GUI ready. Create a course, upload sample notes, then try Demo Quiz / Study Plan.");
     }
 
     private JButton button(String label, Runnable action) {
@@ -164,9 +170,12 @@ public final class StudyGUI {
         Result created = agent.createCourse(name, code == null ? "" : code, term == null ? "" : term);
         if (created.isSuccess() && created.get("course") instanceof Course course) {
             agent.setActiveCourseId(course.getId());
+            showResult(Result.ok("Created course \"" + course.getName() + "\""));
+        } else {
+            showResult(created);
         }
-        showResult(created);
         refreshCourses();
+        selectCourseInList(agent.getActiveCourseId());
     }
 
     private void onRenameCourse() {
@@ -178,8 +187,14 @@ public final class StudyGUI {
         if (name == null || name.isBlank()) {
             return;
         }
-        showResult(agent.renameCourse(course.getId(), name));
+        Result renamed = agent.renameCourse(course.getId(), name);
+        if (renamed.isSuccess() && renamed.get("course") instanceof Course c) {
+            showResult(Result.ok("Renamed course to \"" + c.getName() + "\""));
+        } else {
+            showResult(renamed);
+        }
         refreshCourses();
+        selectCourseInList(course.getId());
     }
 
     private void onArchiveCourse() {
@@ -189,13 +204,14 @@ public final class StudyGUI {
         }
         int confirm = JOptionPane.showConfirmDialog(
                 frame,
-                "Archive " + course.getName() + "?\n(It will disappear from this list.)",
+                "Archive \"" + course.getName() + "\"?\n(It will disappear from this list.)",
                 "Archive course",
                 JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
-        showResult(agent.archiveCourse(course.getId()));
+        showResult(Result.ok("Archived course \"" + course.getName() + "\""));
+        agent.archiveCourse(course.getId());
         refreshCourses();
     }
 
@@ -206,13 +222,16 @@ public final class StudyGUI {
         }
         int confirm = JOptionPane.showConfirmDialog(
                 frame,
-                "Permanently DELETE " + course.getName() + " and its materials?",
+                "Permanently DELETE \"" + course.getName() + "\" and its materials?",
                 "Delete course",
                 JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
+        String name = course.getName();
         showResult(agent.deleteCourse(course.getId()));
+        // Prefer friendly message
+        append("OK: Deleted course \"" + name + "\"");
         refreshCourses();
     }
 
@@ -232,12 +251,12 @@ public final class StudyGUI {
         String courseId = course.getId();
         agent.setActiveCourseId(courseId);
         Result uploaded = agent.upload(courseId, path);
-        showResult(uploaded);
         if (!uploaded.isSuccess()) {
+            showResult(uploaded);
             JOptionPane.showMessageDialog(
                     frame,
                     uploaded.getMessage()
-                            + "\n\nTip: use data/samples/os-scheduling.txt if PDF text extraction fails.",
+                            + "\n\nTip: use data/samples/os-scheduling.txt",
                     "Upload failed",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -248,40 +267,42 @@ public final class StudyGUI {
         if (!materialId.isBlank()) {
             agent.setActiveMaterialId(materialId);
         }
-        int count = agent.getStore().listMaterials(courseId).size();
         Material imported = materialId.isBlank()
                 ? null
                 : agent.getStore().findMaterial(materialId).orElse(null);
-        if (imported != null) {
-            append("Imported file stored for this course (not a text editor).\n"
-                    + "Title: " + imported.getTitle() + "\n"
-                    + "Chars: " + imported.getExtractedText().length() + "\n"
-                    + "Preview:\n"
-                    + preview(imported.getExtractedText(), 280));
-        }
+        String title = imported == null ? "material" : imported.getTitle();
+        int chars = imported == null ? 0 : imported.getExtractedText().length();
+
         JOptionPane.showMessageDialog(
                 frame,
-                "Upload saved inside StudyBuddy.\n"
-                        + "You should see the file name under Materials.\n"
-                        + "Use View Material to read the text.\n"
-                        + "Count for this course: " + count,
+                "Uploaded \"" + title + "\" (" + chars + " characters).\n"
+                        + "It will appear under Materials.",
                 "Upload OK",
                 JOptionPane.INFORMATION_MESSAGE);
-        // Refresh AFTER dialog — Linux file/dialog focus can clear selection mid-refresh
+
         selectCourseInList(courseId);
         refreshMaterialsForCourse(courseId);
         selectMaterialInList(materialId);
         materialList.revalidate();
         materialList.repaint();
+
+        showResult(Result.ok("Uploaded \"" + title + "\" — select it under Materials, then try Demo Quiz."));
+        if (imported != null) {
+            append("Preview:\n" + preview(imported.getExtractedText(), 280));
+        }
+        if (materialModel.isEmpty()) {
+            append("DEBUG: store has "
+                    + agent.getStore().listMaterials(courseId).size()
+                    + " material(s) for this course but the list is empty — click Refresh.");
+        }
     }
 
     private void onViewMaterial() {
         Material material = selectedMaterial();
         if (material == null) {
-            // Fallback: show first material on active course so demos aren't blocked
             String courseId = agent.getActiveCourseId();
             var list = courseId == null || courseId.isBlank()
-                    ? java.util.List.<Material>of()
+                    ? List.<Material>of()
                     : agent.getStore().listMaterials(courseId);
             if (list.isEmpty()) {
                 return;
@@ -361,9 +382,11 @@ public final class StudyGUI {
             return;
         }
         Result result = agent.createDemoQuiz(course.getId());
-        showResult(result);
         if (result.isSuccess() && result.get("quiz") instanceof Quiz quiz) {
+            showResult(Result.ok("Opened demo quiz \"" + quiz.getTitle() + "\" (" + quiz.size() + " questions)"));
             openInteractiveQuiz(quiz);
+        } else {
+            showResult(result);
         }
     }
 
@@ -376,7 +399,21 @@ public final class StudyGUI {
         if (course == null) {
             return;
         }
-        showResult(agent.generatePlan(new PlanSpec(course.getId(), 2.0, LocalDate.now().plusWeeks(2), "")));
+        Result result = agent.generatePlan(new PlanSpec(course.getId(), 2.0, LocalDate.now().plusWeeks(2), ""));
+        if (result.isSuccess() && result.get("plan") instanceof StudyPlan plan) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Study plan created for \"").append(course.getName()).append("\"\n");
+            sb.append("Sessions: ").append(plan.getSessions().size()).append("\n");
+            for (StudyPlan.Session s : plan.getSessions()) {
+                sb.append("- ").append(s.date()).append(": ")
+                        .append(s.focusTopic()).append(" — ")
+                        .append(s.task()).append(" (")
+                        .append(s.minutes()).append(" min)\n");
+            }
+            showResult(Result.ok(sb.toString().trim()));
+        } else {
+            showResult(result);
+        }
     }
 
     private void onWeak() {
@@ -421,14 +458,12 @@ public final class StudyGUI {
         return course;
     }
 
-    private static final String LIST_SEP = " | ";
-
     private Course selectedCourseOrNull() {
         int index = courseList.getSelectedIndex();
-        if (index < 0) {
+        if (index < 0 || index >= courseIds.size()) {
             return null;
         }
-        return agent.getStore().findCourse(listId(courseModel.get(index))).orElse(null);
+        return agent.getStore().findCourse(courseIds.get(index)).orElse(null);
     }
 
     private Material selectedMaterial() {
@@ -443,27 +478,19 @@ public final class StudyGUI {
 
     private Material selectedMaterialOrNull() {
         int index = materialList.getSelectedIndex();
-        if (index < 0) {
+        if (index < 0 || index >= materialIds.size()) {
             return null;
         }
-        return agent.getStore().findMaterial(listId(materialModel.get(index))).orElse(null);
-    }
-
-    private static String listId(String row) {
-        int cut = row.indexOf(LIST_SEP);
-        return cut < 0 ? row.split("\\s+", 2)[0] : row.substring(0, cut).trim();
-    }
-
-    private static String listRow(String id, String label) {
-        return id + LIST_SEP + label;
+        return agent.getStore().findMaterial(materialIds.get(index)).orElse(null);
     }
 
     private void refreshCourses() {
         String keepId = selectedCourseOrNull() == null ? agent.getActiveCourseId() : selectedCourseOrNull().getId();
         courseModel.clear();
-        // Hide archived courses so Archive feels like remove for demos
+        courseIds.clear();
         for (Course c : agent.listActiveCourses()) {
-            courseModel.addElement(listRow(c.getId(), c.getName()));
+            courseIds.add(c.getId());
+            courseModel.addElement(c.getName());
         }
         if (keepId != null && !keepId.isBlank()) {
             selectCourseInList(keepId);
@@ -481,6 +508,7 @@ public final class StudyGUI {
         }
         if (course == null) {
             materialModel.clear();
+            materialIds.clear();
             return;
         }
         refreshMaterialsForCourse(course.getId());
@@ -488,11 +516,13 @@ public final class StudyGUI {
 
     private void refreshMaterialsForCourse(String courseId) {
         materialModel.clear();
+        materialIds.clear();
         if (courseId == null || courseId.isBlank()) {
             return;
         }
         for (Material m : agent.getStore().listMaterials(courseId)) {
-            materialModel.addElement(listRow(m.getId(), m.getTitle()));
+            materialIds.add(m.getId());
+            materialModel.addElement(m.getTitle());
         }
     }
 
@@ -500,12 +530,10 @@ public final class StudyGUI {
         if (courseId == null || courseId.isBlank()) {
             return;
         }
-        for (int i = 0; i < courseModel.size(); i++) {
-            if (listId(courseModel.get(i)).equals(courseId)) {
-                courseList.setSelectedIndex(i);
-                agent.setActiveCourseId(courseId);
-                return;
-            }
+        int index = courseIds.indexOf(courseId);
+        if (index >= 0) {
+            courseList.setSelectedIndex(index);
+            agent.setActiveCourseId(courseId);
         }
     }
 
@@ -513,12 +541,10 @@ public final class StudyGUI {
         if (materialId == null || materialId.isBlank()) {
             return;
         }
-        for (int i = 0; i < materialModel.size(); i++) {
-            if (listId(materialModel.get(i)).equals(materialId)) {
-                materialList.setSelectedIndex(i);
-                agent.setActiveMaterialId(materialId);
-                return;
-            }
+        int index = materialIds.indexOf(materialId);
+        if (index >= 0) {
+            materialList.setSelectedIndex(index);
+            agent.setActiveMaterialId(materialId);
         }
     }
 
