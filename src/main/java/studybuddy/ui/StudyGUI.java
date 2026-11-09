@@ -228,8 +228,9 @@ public final class StudyGUI {
             return;
         }
         String path = chooser.getSelectedFile().getAbsolutePath();
-        agent.setActiveCourseId(course.getId());
-        Result uploaded = agent.upload(course.getId(), path);
+        String courseId = course.getId();
+        agent.setActiveCourseId(courseId);
+        Result uploaded = agent.upload(courseId, path);
         showResult(uploaded);
         if (!uploaded.isSuccess()) {
             JOptionPane.showMessageDialog(
@@ -240,13 +241,21 @@ public final class StudyGUI {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (uploaded.get("materialId") != null) {
-            agent.setActiveMaterialId(String.valueOf(uploaded.get("materialId")));
+        String materialId = uploaded.get("materialId") == null
+                ? ""
+                : String.valueOf(uploaded.get("materialId"));
+        if (!materialId.isBlank()) {
+            agent.setActiveMaterialId(materialId);
         }
-        refreshMaterials();
+        // File chooser can clear list selection on Linux — restore course + refresh by id
+        selectCourseInList(courseId);
+        refreshMaterialsForCourse(courseId);
+        selectMaterialInList(materialId);
+        int count = agent.getStore().listMaterials(courseId).size();
         JOptionPane.showMessageDialog(
                 frame,
-                "Uploaded successfully.\nSelect the material in the middle list if needed.",
+                "Uploaded successfully.\nMaterials for this course: " + count
+                        + (materialId.isBlank() ? "" : ("\nNew id: " + materialId)),
                 "Upload OK",
                 JOptionPane.INFORMATION_MESSAGE);
     }
@@ -390,27 +399,66 @@ public final class StudyGUI {
     }
 
     private void refreshCourses() {
+        String keepId = selectedCourseOrNull() == null ? agent.getActiveCourseId() : selectedCourseOrNull().getId();
         courseModel.clear();
         // Hide archived courses so Archive feels like remove for demos
         for (Course c : agent.listActiveCourses()) {
             courseModel.addElement(c.getId() + "  " + c.getName());
         }
-        refreshMaterials();
+        if (keepId != null && !keepId.isBlank()) {
+            selectCourseInList(keepId);
+            refreshMaterialsForCourse(keepId);
+        } else {
+            refreshMaterials();
+        }
     }
 
     private void refreshMaterials() {
-        materialModel.clear();
-        Course course = null;
-        int index = courseList.getSelectedIndex();
-        if (index >= 0) {
-            String id = courseModel.get(index).split(" ", 2)[0];
-            course = agent.getStore().findCourse(id).orElse(null);
-        }
-        if (course == null) {
+        Course course = selectedCourseOrNull();
+        if (course == null && agent.getActiveCourseId() != null && !agent.getActiveCourseId().isBlank()) {
+            refreshMaterialsForCourse(agent.getActiveCourseId());
             return;
         }
-        for (Material m : agent.getStore().listMaterials(course.getId())) {
+        if (course == null) {
+            materialModel.clear();
+            return;
+        }
+        refreshMaterialsForCourse(course.getId());
+    }
+
+    private void refreshMaterialsForCourse(String courseId) {
+        materialModel.clear();
+        if (courseId == null || courseId.isBlank()) {
+            return;
+        }
+        for (Material m : agent.getStore().listMaterials(courseId)) {
             materialModel.addElement(m.getId() + "  " + m.getTitle());
+        }
+    }
+
+    private void selectCourseInList(String courseId) {
+        if (courseId == null || courseId.isBlank()) {
+            return;
+        }
+        for (int i = 0; i < courseModel.size(); i++) {
+            if (courseModel.get(i).startsWith(courseId)) {
+                courseList.setSelectedIndex(i);
+                agent.setActiveCourseId(courseId);
+                return;
+            }
+        }
+    }
+
+    private void selectMaterialInList(String materialId) {
+        if (materialId == null || materialId.isBlank()) {
+            return;
+        }
+        for (int i = 0; i < materialModel.size(); i++) {
+            if (materialModel.get(i).startsWith(materialId)) {
+                materialList.setSelectedIndex(i);
+                agent.setActiveMaterialId(materialId);
+                return;
+            }
         }
     }
 
