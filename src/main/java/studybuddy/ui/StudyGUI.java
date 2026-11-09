@@ -94,6 +94,7 @@ public final class StudyGUI {
         courseButtons.add(button("Archive Course", this::onArchiveCourse));
         courseButtons.add(button("Delete Course", this::onDeleteCourse));
         courseButtons.add(button("Upload Material", this::onUpload));
+        courseButtons.add(button("Upload Sample Notes", this::onUploadSample));
         courseButtons.add(button("Refresh", this::refreshCourses));
         left.add(courseButtons, BorderLayout.SOUTH);
 
@@ -240,23 +241,54 @@ public final class StudyGUI {
         if (course == null) {
             return;
         }
-        JFileChooser chooser = new JFileChooser(new File("data/samples"));
+        File startDir = resolveSampleDir();
+        append("Opening file picker in: " + startDir.getAbsolutePath());
+        JFileChooser chooser = new JFileChooser(startDir);
         chooser.setDialogTitle("Upload learning material");
         chooser.setFileFilter(new FileNameExtensionFilter("Notes (PDF, TXT, MD)", "pdf", "txt", "md", "markdown"));
         int result = chooser.showOpenDialog(frame);
         if (result != JFileChooser.APPROVE_OPTION) {
+            append("Upload cancelled (no file chosen). Tip: use Upload Sample Notes instead.");
             return;
         }
-        String path = chooser.getSelectedFile().getAbsolutePath();
-        String courseId = course.getId();
-        agent.setActiveCourseId(courseId);
-        Result uploaded = agent.upload(courseId, path);
-        if (!uploaded.isSuccess()) {
-            showResult(uploaded);
+        File chosen = chooser.getSelectedFile();
+        if (chosen == null) {
+            append("Upload cancelled: file was null. Tip: use Upload Sample Notes.");
+            return;
+        }
+        importPath(course, chosen.getAbsolutePath());
+    }
+
+    /** One-click F02 demo path — avoids flaky Linux file dialogs. */
+    private void onUploadSample() {
+        Course course = selectedCourse();
+        if (course == null) {
+            return;
+        }
+        File sample = new File(resolveSampleDir(), "os-scheduling.txt");
+        if (!sample.isFile()) {
+            showResult(Result.fail("Sample file missing: " + sample.getAbsolutePath()));
             JOptionPane.showMessageDialog(
                     frame,
-                    uploaded.getMessage()
-                            + "\n\nTip: use data/samples/os-scheduling.txt",
+                    "Could not find:\n" + sample.getAbsolutePath(),
+                    "Sample missing",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        append("Uploading sample notes: " + sample.getAbsolutePath());
+        importPath(course, sample.getAbsolutePath());
+    }
+
+    private void importPath(Course course, String path) {
+        String courseId = course.getId();
+        agent.setActiveCourseId(courseId);
+        append("Importing into course \"" + course.getName() + "\" from:\n" + path);
+        Result uploaded = agent.upload(courseId, path);
+        showResult(uploaded);
+        if (!uploaded.isSuccess()) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    uploaded.getMessage(),
                     "Upload failed",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -270,31 +302,47 @@ public final class StudyGUI {
         Material imported = materialId.isBlank()
                 ? null
                 : agent.getStore().findMaterial(materialId).orElse(null);
-        String title = imported == null ? "material" : imported.getTitle();
+        String title = imported == null ? new File(path).getName() : imported.getTitle();
         int chars = imported == null ? 0 : imported.getExtractedText().length();
 
-        JOptionPane.showMessageDialog(
-                frame,
-                "Uploaded \"" + title + "\" (" + chars + " characters).\n"
-                        + "It will appear under Materials.",
-                "Upload OK",
-                JOptionPane.INFORMATION_MESSAGE);
-
+        // Refresh list BEFORE dialog so Materials is visibly filled
         selectCourseInList(courseId);
         refreshMaterialsForCourse(courseId);
         selectMaterialInList(materialId);
         materialList.revalidate();
         materialList.repaint();
+        frame.repaint();
 
-        showResult(Result.ok("Uploaded \"" + title + "\" — select it under Materials, then try Demo Quiz."));
+        append("Materials list now has " + materialModel.size() + " item(s).");
         if (imported != null) {
             append("Preview:\n" + preview(imported.getExtractedText(), 280));
         }
-        if (materialModel.isEmpty()) {
-            append("DEBUG: store has "
-                    + agent.getStore().listMaterials(courseId).size()
-                    + " material(s) for this course but the list is empty — click Refresh.");
+
+        JOptionPane.showMessageDialog(
+                frame,
+                "Uploaded \"" + title + "\" (" + chars + " characters).\n"
+                        + "Check the Materials list in the middle.",
+                "Upload OK",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        // Refresh again after dialog (Linux focus quirks)
+        selectCourseInList(courseId);
+        refreshMaterialsForCourse(courseId);
+        selectMaterialInList(materialId);
+    }
+
+    private File resolveSampleDir() {
+        File[] candidates = new File[] {
+                new File("data/samples"),
+                new File(System.getProperty("user.dir", "."), "data/samples"),
+                new File(System.getProperty("user.home", "."), "EECS3311-StudyBuddy-Agent/data/samples")
+        };
+        for (File dir : candidates) {
+            if (dir.isDirectory()) {
+                return dir.getAbsoluteFile();
+            }
         }
+        return new File(System.getProperty("user.dir", ".")).getAbsoluteFile();
     }
 
     private void onViewMaterial() {
