@@ -53,6 +53,8 @@ public final class StudyGUI {
     private JList<String> materialList;
     private JTextArea output;
     private JTextField input;
+    /** When true, course selection changes do not clear/rebuild Materials. */
+    private boolean suppressCourseListener;
 
     public StudyGUI(AgentController agent) {
         this.agent = agent;
@@ -71,13 +73,14 @@ public final class StudyGUI {
         courseList = new JList<>(courseModel);
         courseList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         courseList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                Course selected = selectedCourseOrNull();
-                if (selected != null) {
-                    agent.setActiveCourseId(selected.getId());
-                }
-                refreshMaterials();
+            if (suppressCourseListener || e.getValueIsAdjusting()) {
+                return;
             }
+            Course selected = selectedCourseOrNull();
+            if (selected != null) {
+                agent.setActiveCourseId(selected.getId());
+            }
+            refreshMaterials();
         });
 
         materialList = new JList<>(materialModel);
@@ -283,7 +286,14 @@ public final class StudyGUI {
         String courseId = course.getId();
         agent.setActiveCourseId(courseId);
         append("Importing into course \"" + course.getName() + "\" from:\n" + path);
-        Result uploaded = agent.upload(courseId, path);
+        Result uploaded;
+        try {
+            uploaded = agent.upload(courseId, path);
+        } catch (RuntimeException ex) {
+            append("FAIL: upload crashed: " + ex.getMessage());
+            ex.printStackTrace();
+            return;
+        }
         showResult(uploaded);
         if (!uploaded.isSuccess()) {
             JOptionPane.showMessageDialog(
@@ -293,42 +303,73 @@ public final class StudyGUI {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-        String materialId = uploaded.get("materialId") == null
-                ? ""
-                : String.valueOf(uploaded.get("materialId"));
+
+        Object rawId = uploaded.getData().get("materialId");
+        Object rawTitle = uploaded.getData().get("title");
+        String materialId = rawId == null ? "" : String.valueOf(rawId);
+        String title = rawTitle == null ? new File(path).getName() : String.valueOf(rawTitle);
+
         if (!materialId.isBlank()) {
             agent.setActiveMaterialId(materialId);
         }
+
+        // Force Materials list to show this file even if a selection listener races
+        suppressCourseListener = true;
+        try {
+            selectCourseInList(courseId);
+            showMaterialInList(materialId, title, courseId);
+        } finally {
+            suppressCourseListener = false;
+        }
+
+        append("Materials list now has " + materialModel.size() + " item(s): " + materialModel);
         Material imported = materialId.isBlank()
                 ? null
                 : agent.getStore().findMaterial(materialId).orElse(null);
-        String title = imported == null ? new File(path).getName() : imported.getTitle();
-        int chars = imported == null ? 0 : imported.getExtractedText().length();
-
-        // Refresh list BEFORE dialog so Materials is visibly filled
-        selectCourseInList(courseId);
-        refreshMaterialsForCourse(courseId);
-        selectMaterialInList(materialId);
-        materialList.revalidate();
-        materialList.repaint();
-        frame.repaint();
-
-        append("Materials list now has " + materialModel.size() + " item(s).");
         if (imported != null) {
             append("Preview:\n" + preview(imported.getExtractedText(), 280));
+        } else {
+            append("WARN: store.findMaterial returned empty for id=" + materialId
+                    + " ; store has " + agent.getStore().listMaterials(courseId).size()
+                    + " material(s) for this course.");
         }
 
         JOptionPane.showMessageDialog(
                 frame,
-                "Uploaded \"" + title + "\" (" + chars + " characters).\n"
-                        + "Check the Materials list in the middle.",
+                "Uploaded \"" + title + "\".\nIt should appear under Materials now.",
                 "Upload OK",
                 JOptionPane.INFORMATION_MESSAGE);
 
-        // Refresh again after dialog (Linux focus quirks)
-        selectCourseInList(courseId);
+        suppressCourseListener = true;
+        try {
+            selectCourseInList(courseId);
+            showMaterialInList(materialId, title, courseId);
+        } finally {
+            suppressCourseListener = false;
+        }
+    }
+
+    /**
+     * Put the imported note into the Materials list immediately (by id/title),
+     * then sync from the store so all notes for the course appear.
+     */
+    private void showMaterialInList(String materialId, String title, String courseId) {
         refreshMaterialsForCourse(courseId);
+        if (materialModel.isEmpty() && materialId != null && !materialId.isBlank()) {
+            // Absolute fallback if store listing failed for any reason
+            materialIds.clear();
+            materialModel.clear();
+            materialIds.add(materialId);
+            materialModel.addElement(title == null || title.isBlank() ? "uploaded-notes.txt" : title);
+            append("Fallback: forced Materials row for \"" + materialModel.get(0) + "\".");
+        }
         selectMaterialInList(materialId);
+        materialList.revalidate();
+        materialList.repaint();
+        if (frame != null) {
+            frame.revalidate();
+            frame.repaint();
+        }
     }
 
     private File resolveSampleDir() {
@@ -568,9 +609,25 @@ public final class StudyGUI {
         if (courseId == null || courseId.isBlank()) {
             return;
         }
-        for (Material m : agent.getStore().listMaterials(courseId)) {
-            materialIds.add(m.getId());
-            materialModel.addElement(m.getTitle());
+        List<Material> materials = agent.getStore().listMaterials(courseId);
+        // Also include any material ids recorded on the Course object
+        Course course = agent.getStore().findCourse(courseId).orElse(null);
+        if (course != null) {
+            for (String mid : course.getMaterialIds()) {
+                agent.getStore().findMaterial(mid).ifPresent(m -> {
+                    if (materials.stream().noneMatch(existing -> existing.getId().equals(m.getId()))) {
+                        // listMaterials missed it — still show it
+                        materialIds.add(m.getId());
+                        materialModel.addElement(m.getTitle());
+                    }
+                });
+            }
+        }
+        for (Material m : materials) {
+            if (!materialIds.contains(m.getId())) {
+                materialIds.add(m.getId());
+                materialModel.addElement(m.getTitle());
+            }
         }
     }
 

@@ -39,11 +39,13 @@ public final class MaterialImportTool implements Tool {
             Material material = new Material(courseId, title, path, text);
             ctx.getStore().save(material);
             return Result.ok(
-                    "Imported material " + material.getId(),
+                    "Uploaded \"" + material.getTitle() + "\" (" + text.length() + " characters)",
                     Map.of(
                             "materialId", material.getId(),
+                            "title", material.getTitle(),
                             "chars", text.length(),
-                            "source", path));
+                            "source", path,
+                            "courseId", courseId));
         } catch (IOException ex) {
             return Result.fail("Failed to import: " + ex.getMessage());
         }
