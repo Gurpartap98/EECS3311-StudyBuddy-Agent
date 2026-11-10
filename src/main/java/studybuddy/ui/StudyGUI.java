@@ -8,6 +8,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -515,7 +516,22 @@ public final class StudyGUI {
             return;
         }
         input.setText("");
-        showResult(agent.handleRequest(text));
+        // Simple questions → F05 retrieve/answer with active course context.
+        // Multi-step phrasing ("then", "and make", …) → F12 planner.
+        String lower = text.toLowerCase(Locale.ROOT);
+        boolean multiStep = lower.contains(" then ")
+                || lower.contains(" and then ")
+                || lower.matches(".*\\b(summarize|concepts?|flashcards?|quiz|plan)\\b.*\\b(and|then)\\b.*")
+                || lower.matches(".*\\b(and|then)\\b.*\\b(summarize|concepts?|flashcards?|quiz|plan)\\b.*");
+        if (multiStep) {
+            showResult(agent.handleRequest(text));
+            return;
+        }
+        String courseId = agent.getActiveCourseId();
+        if ((courseId == null || courseId.isBlank()) && selectedCourseOrNull() != null) {
+            courseId = selectedCourseOrNull().getId();
+        }
+        showResult(agent.ask(text, courseId == null ? "" : courseId));
     }
 
     private Course selectedCourse() {
@@ -634,6 +650,15 @@ public final class StudyGUI {
 
     private void showResult(Result result) {
         append((result.isSuccess() ? "OK: " : "FAIL: ") + result.getMessage());
+        // Extra visibility if a tool put content only in data
+        Object summary = result.getData().get("summary");
+        Object answer = result.getData().get("answer");
+        if (summary != null && !result.getMessage().contains(String.valueOf(summary))) {
+            append(String.valueOf(summary));
+        }
+        if (answer != null && !result.getMessage().contains(String.valueOf(answer))) {
+            append(String.valueOf(answer));
+        }
     }
 
     private void append(String text) {

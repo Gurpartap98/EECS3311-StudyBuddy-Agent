@@ -30,8 +30,14 @@ public final class FlashcardTool implements Tool {
             String raw = ctx.getLlm().generate(prompt);
             List<Flashcard> cards = parseCards(materialId, raw);
             ctx.getStore().saveFlashcards(materialId, cards);
+            StringBuilder listed = new StringBuilder("Generated ")
+                    .append(cards.size())
+                    .append(" flashcards:\n");
+            for (Flashcard card : cards) {
+                listed.append("- Q: ").append(card.getFront()).append('\n');
+            }
             return Result.ok(
-                    "Generated " + cards.size() + " flashcards",
+                    listed.toString().trim(),
                     Map.of("flashcards", cards, "raw", raw));
         } catch (LLMException ex) {
             return Result.fail(ex.getMessage());

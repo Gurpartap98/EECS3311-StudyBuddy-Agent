@@ -29,8 +29,18 @@ public final class ConceptTool implements Tool {
             String raw = ctx.getLlm().generate(prompt);
             List<Concept> concepts = parseConcepts(materialId, raw);
             ctx.getStore().saveConcepts(materialId, concepts);
+            StringBuilder listed = new StringBuilder("Extracted ")
+                    .append(concepts.size())
+                    .append(" concepts:\n");
+            for (Concept concept : concepts) {
+                listed.append("- ").append(concept.getName());
+                if (concept.getGloss() != null && !concept.getGloss().isBlank()) {
+                    listed.append(" — ").append(concept.getGloss());
+                }
+                listed.append('\n');
+            }
             return Result.ok(
-                    "Extracted " + concepts.size() + " concepts",
+                    listed.toString().trim(),
                     Map.of("concepts", concepts, "raw", raw));
         } catch (LLMException ex) {
             return Result.fail(ex.getMessage());

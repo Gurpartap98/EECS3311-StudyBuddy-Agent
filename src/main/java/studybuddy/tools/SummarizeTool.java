@@ -29,7 +29,9 @@ public final class SummarizeTool implements Tool {
             String summary = ctx.getLlm().generate(prompt);
             material.setSummary(summary);
             ctx.getStore().save(material);
-            return Result.ok("Summary saved", Map.of("summary", summary));
+            return Result.ok(
+                    "Summary saved\n\n" + summary.trim(),
+                    Map.of("summary", summary));
         } catch (LLMException ex) {
             return Result.fail(ex.getMessage());
         }

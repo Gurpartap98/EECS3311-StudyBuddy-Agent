@@ -31,15 +31,36 @@ public final class GroqClient implements LLMClient {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", model);
         body.put("temperature", 0.2);
+        // Free-tier OTPM caps expected max_tokens; Groq defaults to 2048 which trips HTTP 429.
+        body.put("max_tokens", 400);
         body.put("messages", List.of(Map.of(
                 "role", "user",
                 "content", prompt)));
 
-        String response = HttpJson.postJson(
-                URL,
-                Map.of("Authorization", "Bearer " + apiKey),
-                body);
-        return extractContent(response);
+        LLMException last = null;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                String response = HttpJson.postJson(
+                        URL,
+                        Map.of("Authorization", "Bearer " + apiKey),
+                        body);
+                return extractContent(response);
+            } catch (LLMException ex) {
+                last = ex;
+                String msg = ex.getMessage() == null ? "" : ex.getMessage();
+                boolean rateLimited = msg.contains("HTTP 429") || msg.contains("rate_limit");
+                if (!rateLimited || attempt == 3) {
+                    throw ex;
+                }
+                try {
+                    Thread.sleep(2000L * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new LLMException("Interrupted while waiting after Groq rate limit", ie);
+                }
+            }
+        }
+        throw last == null ? new LLMException("Groq generate failed") : last;
     }
 
     private static String extractContent(String response) throws LLMException {
