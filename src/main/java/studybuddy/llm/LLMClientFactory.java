@@ -12,7 +12,7 @@ public final class LLMClientFactory {
         String provider = config.provider();
         LLMClient raw = switch (provider) {
             case "groq" -> config.apiKey()
-                    .<LLMClient>map(key -> new GroqClient(key, config.modelOrDefault("llama-3.1-8b-instant")))
+                    .<LLMClient>map(key -> new GroqClient(key, config.modelOrDefault("qwen/qwen3.8-27b")))
                     .orElseGet(StubLLMClient::new);
             case "gemini" -> config.apiKey()
                     .<LLMClient>map(key -> new GeminiClient(key, config.modelOrDefault("gemini-2.0-flash")))

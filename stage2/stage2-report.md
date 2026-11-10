@@ -77,7 +77,7 @@ Class diagram: Stage 1 `stage1/diagrams/Class.png` plus code packages under `src
 | Tool | Model | Used for | Tokens / money |
 |---|---|---|---|
 | Cursor Cloud Agent | Composer / Cursor default | Stage 2 Java implementation, tests, report draft | Fill from Cursor usage if available |
-| Runtime LLM (Groq recommended) | e.g. `llama-3.1-8b-instant` | Summarize, concepts, Q&A, flashcards, quizzes, plans | See `data/ai-usage.log` after demos (`ailog` CLI) |
+| Runtime LLM (Groq recommended) | e.g. `qwen/qwen3.8-27b` | Summarize, concepts, Q&A, flashcards, quizzes, plans | See `data/ai-usage.log` after demos (`ailog` CLI) |
 
 **How to capture cost:** run features with a key configured, then `ailog` or open `data/ai-usage.log`. Paste totals here before PDF export.
 

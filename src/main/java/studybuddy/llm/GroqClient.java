@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 public final class GroqClient implements LLMClient {
 
-    private static final String DEFAULT_MODEL = "llama-3.1-8b-instant";
+    private static final String DEFAULT_MODEL = "qwen/qwen3.8-27b";
     private static final String URL = "https://api.groq.com/openai/v1/chat/completions";
 
     private final String apiKey;

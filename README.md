@@ -57,7 +57,7 @@ With a Groq key, also try: `summarize`, `concepts`, `flashcards`, `review`, AI `
    ```bash
    LLM_PROVIDER=groq
    LLM_API_KEY=gsk_your_key_here
-   LLM_MODEL=llama-3.1-8b-instant
+   LLM_MODEL=qwen/qwen3.8-27b
    ```
 4. Run CLI/GUI — startup prints `StudyBuddy LLM: groq/...`
 5. After AI calls, run `ailog` or inspect `data/ai-usage.log` for the Stage 2 cost log
