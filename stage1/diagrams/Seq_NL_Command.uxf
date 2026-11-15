@@ -9,7 +9,7 @@
       <w>390</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>SD06 - Natural-Language Multi-Step Command (F12)</panel_attributes>
+    <panel_attributes>SD06 - Natural-Language Multi-Step Command (F12) — Stage 2 updated</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -361,7 +361,7 @@
       <w>140</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>OllamaClient</panel_attributes>
+    <panel_attributes>LLMClient (Groq)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

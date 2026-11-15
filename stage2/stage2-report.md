@@ -89,11 +89,20 @@ Every Stage 1 feature (F01–F12) is implemented. None were removed. Collaborati
 - **Roles:** Subject `ProgressTracker`; observer `ProgressView` (`update`); events from `QuizEngine.grade` / `record`.
 - **Stage 1:** Matches.
 
-**UML (updated for Stage 2):**
-- Class diagram PNG: `stage2/diagrams/Class_Stage2.png` (also updated `stage1/diagrams/Class.png`)
-- UMLet source to re-open/edit: `stage2/diagrams/Class_Stage2.uxf` (same content as `stage1/diagrams/Class.uxf`)
-- Use-case diagram `stage1/diagrams/use_case.png` still covers F01–F12 (unchanged features)
-- Sequence diagrams `stage1/diagrams/Seq_*.png` still match collaborations (UI → Facade → Tool → `LLMClient` → store); Stage 1 “OllamaClient” boxes are now any Strategy implementation (Groq primary)
+**UML (updated for Stage 2):** all PNG + UXF live under `stage2/diagrams/` and are synced into `stage1/diagrams/`.
+
+| Diagram | PNG | UMLet UXF |
+|---|---|---|
+| Class | `stage2/diagrams/Class_Stage2.png` | `stage2/diagrams/Class_Stage2.uxf` |
+| Use case (UC01–UC12) | `stage2/diagrams/use_case.png` | `stage2/diagrams/use_case.uxf` |
+| SD01 Upload (F02) | `stage2/diagrams/Seq_Upload.png` | `stage2/diagrams/Seq_Upload.uxf` |
+| SD02 Summarize (F03) | `stage2/diagrams/Seq_Summarize.png` | `stage2/diagrams/Seq_Summarize.uxf` |
+| SD03 Q&A (F05) | `stage2/diagrams/Seq_QA.png` | `stage2/diagrams/Seq_QA.uxf` |
+| SD04 Quiz (F08) | `stage2/diagrams/Seq_Quiz.png` | `stage2/diagrams/Seq_Quiz.uxf` |
+| SD05 Grade/Progress (F09–F11) | `stage2/diagrams/Seq_Grade.png` | `stage2/diagrams/Seq_Grade.uxf` |
+| SD06 NL multi-step (F12) | `stage2/diagrams/Seq_NL_Command.png` | `stage2/diagrams/Seq_NL_Command.uxf` |
+
+Stage 2 edits vs Stage 1: `OllamaClient` → `LLMClient (Groq)` Strategy; persistence shown as `JsonDocumentStore`; use-case note that GUI+CLI share the facade. Feature set UC01–UC12 unchanged.
 
 ---
 

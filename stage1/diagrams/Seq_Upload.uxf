@@ -9,7 +9,7 @@
       <w>230</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>SD01 - Upload Material (F02)</panel_attributes>
+    <panel_attributes>SD01 - Upload Material (F02) — Stage 2 updated</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -108,7 +108,7 @@
       <w>160</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>upload(courseld, path)</panel_attributes>
+    <panel_attributes>upload(courseId, path)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -174,7 +174,7 @@
       <w>140</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>DocumentStore</panel_attributes>
+    <panel_attributes>JsonDocumentStore</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

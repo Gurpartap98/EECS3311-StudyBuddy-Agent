@@ -2,6 +2,19 @@
 <diagram program="umlet" version="15.1">
   <zoom_level>10</zoom_level>
   <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>0</x>
+      <y>0</y>
+      <w>360</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>Stage 2 note: Use cases UC01–UC12 / F01–F12 unchanged.
+GUI + CLI both access the same AgentController facade.
+Primary LLM strategy is Groq (LLMClient); Ollama still available.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <id>UMLActor</id>
     <coordinates>
       <x>0</x>

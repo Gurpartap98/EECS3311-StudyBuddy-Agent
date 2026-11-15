@@ -9,7 +9,7 @@
       <w>230</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>SD02 - Summarize Material (F03)</panel_attributes>
+    <panel_attributes>SD02 - Summarize Material (F03) — Stage 2 updated</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -207,7 +207,7 @@
       <w>140</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>OllamaClient</panel_attributes>
+    <panel_attributes>LLMClient (Groq)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -372,7 +372,7 @@
       <w>140</w>
       <h>30</h>
     </coordinates>
-    <panel_attributes>DocumentStore</panel_attributes>
+    <panel_attributes>JsonDocumentStore</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
