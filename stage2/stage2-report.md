@@ -5,7 +5,7 @@
 **Repository:** https://github.com/Gurpartap98/EECS3311-StudyBuddy-Agent  
 **Course:** EECS 3311 Software Design (Fall 2026), Section A — Song Wang  
 
-> Export this Markdown to PDF/Word and commit the file as **`stage2-report.pdf`** (or `.docx`) in this repository before course submission.
+> PDF export: [`stage2/stage2-report.pdf`](stage2-report.pdf) (also kept in sync with this Markdown).
 
 ---
 
@@ -24,7 +24,7 @@ StudyBuddy Agent is a Java (Maven) AI study assistant for students who want help
 - F08 demo quiz + interactive take/grade without LLM
 - F09–F11 grading, explanations, progress persistence, weak topics (Observer)
 
-**Limitations:** Retrieval is keyword overlap (not embeddings). AI JSON/line parsing is best-effort. Free Groq tiers rate-limit output tokens (client retries / caps `max_tokens`). Class diagram PNG in `stage1/diagrams/` is still the Stage 1 baseline; architecture matches packages under `src/main/java/studybuddy/` (see §3).
+**Limitations:** Retrieval is keyword overlap (not embeddings). AI JSON/line parsing is best-effort. Free Groq tiers rate-limit output tokens (client retries / caps `max_tokens`).
 
 **Stage 1 → Stage 2 LLM change:** Primary runtime strategy is a free/cheap HTTP API (Groq) instead of only local Ollama 3B, same `LLMClient` interface (documented Strategy extension; Ollama still available).
 
@@ -165,10 +165,10 @@ Base: https://github.com/Gurpartap98/EECS3311-StudyBuddy-Agent/commit/
 - Manual GUI: upload, summarize/concepts/ask, flashcards, Quiz AI, Demo Quiz, study plan, history
 - Defects fixed during Period 3: materials list refresh on Linux, course UUID display, study-plan fallback messaging, Groq model/rate-limit handling
 
-### Remaining / known gaps for reviewers
-- Export this file to **`stage2-report.pdf`** in the repo
-- Collectively demos should include **CLI** as well as GUI (see §7 note)
-- Optional: redraw UMLet class diagram if TA requires a Stage-2-dated PNG
+### Submission artifacts
+- `stage2/stage2-report.pdf` committed in the repository
+- Feature demos (GUI) + CLI demo indexed in §7
+- Updated UML under `stage2/diagrams/` (class, use-case, sequences)
 
 ---
 
