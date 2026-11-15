@@ -86,9 +86,12 @@ src/main/java/studybuddy/
 1. Source on this public GitHub repo  
 2. README (this file)  
 3. `.env.example` only — never commit `.env`  
-4. `stage2/stage2-report.md` → export **`stage2-report.pdf`** (or Word)  
-5. Demo videos for **every** feature (GUI + CLI collectively), links in the report  
-6. Weekly code commits for Periods 1–3  
+4. Implementation report: `stage2/stage2-report.pdf` (also copied to repo-root `stage2-report.pdf`)  
+5. Demo videos for **every** feature (GUI + CLI), links in the report §7  
+6. Weekly code commits for Periods 1–3 (see report §6)  
+7. Updated UML: `stage2/diagrams/`  
+
+Submit this repository URL through the course system. Keep YouTube links Unlisted/Public.
 
 ## Stage 1 diagrams
 
