@@ -76,7 +76,7 @@ public final class StudyCLI {
                 case "flashcards" -> flashcards(args);
                 case "review" -> reviewFlashcards(args);
                 case "quiz" -> quiz(args);
-                case "demo-quiz" -> printResult(agent.createDemoQuiz(args));
+                case "demo-quiz" -> demoQuiz(args);
                 case "quizzes" -> listQuizzes(args);
                 case "take-quiz" -> takeQuiz(args);
                 case "grade" -> grade(args);
@@ -232,6 +232,23 @@ public final class StudyCLI {
             }
         }
         out.println("Review done.");
+    }
+
+    private void demoQuiz(String courseId) {
+        if (courseId.isBlank()) {
+            out.println("Usage: demo-quiz <courseId>");
+            return;
+        }
+        Result created = agent.createDemoQuiz(courseId.trim());
+        printResult(created);
+        if (!created.isSuccess()) {
+            return;
+        }
+        Object quizObj = created.getData().get("quiz");
+        if (quizObj instanceof Quiz quiz) {
+            out.println("Starting interactive take-quiz now...");
+            takeQuiz(quiz.getId());
+        }
     }
 
     private void quiz(String args) {
