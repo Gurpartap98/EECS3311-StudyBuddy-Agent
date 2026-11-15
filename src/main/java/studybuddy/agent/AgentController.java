@@ -231,8 +231,10 @@ public final class AgentController {
         Quiz quiz = new Quiz(courseId, "Demo CPU Scheduling Quiz", questions);
         store.save(quiz);
         return Result.ok(
-                "Created demo quiz \"" + quiz.getTitle() + "\" with " + quiz.size() + " MCQ questions",
-                Map.of("quiz", quiz));
+                "Created demo quiz \"" + quiz.getTitle() + "\" with " + quiz.size()
+                        + " MCQ questions\nQuiz id: " + quiz.getId()
+                        + "\n(Next: take-quiz " + quiz.getId() + "   — or just re-run demo-quiz after git pull)",
+                Map.of("quiz", quiz, "quizId", quiz.getId()));
     }
 
     /**

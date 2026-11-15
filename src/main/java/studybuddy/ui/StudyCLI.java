@@ -245,9 +245,17 @@ public final class StudyCLI {
             return;
         }
         Object quizObj = created.getData().get("quiz");
+        String quizId = created.getData().get("quizId") == null
+                ? ""
+                : String.valueOf(created.getData().get("quizId"));
         if (quizObj instanceof Quiz quiz) {
-            out.println("Starting interactive take-quiz now...");
-            takeQuiz(quiz.getId());
+            quizId = quiz.getId();
+        }
+        if (!quizId.isBlank()) {
+            out.println();
+            out.println(">>> Starting the quiz now (questions appear below). <<<");
+            out.println();
+            takeQuiz(quizId);
         }
     }
 
@@ -283,14 +291,25 @@ public final class StudyCLI {
         }
     }
 
-    private void takeQuiz(String quizId) {
-        if (quizId.isBlank()) {
+    private void takeQuiz(String idOrCourseId) {
+        if (idOrCourseId.isBlank()) {
             out.println("Usage: take-quiz <quizId>");
+            out.println("   or: take-quiz <courseId>   (uses the latest quiz for that course)");
             return;
         }
-        Quiz quiz = agent.getStore().findQuiz(quizId).orElse(null);
+        String key = idOrCourseId.trim();
+        Quiz quiz = agent.getStore().findQuiz(key).orElse(null);
         if (quiz == null) {
-            out.println("Quiz not found: " + quizId);
+            // Allow passing courseId by mistake/convenience — pick latest quiz for course
+            List<Quiz> forCourse = agent.getStore().listQuizzes(key);
+            if (!forCourse.isEmpty()) {
+                quiz = forCourse.get(forCourse.size() - 1);
+                out.println("Note: using latest quiz for course: " + quiz.getId());
+            }
+        }
+        if (quiz == null) {
+            out.println("Quiz not found: " + key);
+            out.println("Tip: run  quizzes <courseId>  then  take-quiz <quizId>");
             return;
         }
         out.println("Taking: " + quiz.getTitle() + " (" + quiz.size() + " questions)");
@@ -311,7 +330,7 @@ public final class StudyCLI {
             String ans = in.hasNextLine() ? in.nextLine().trim() : "";
             answers.put(question.getId(), ans);
         }
-        printResult(agent.gradeQuiz(quizId, answers));
+        printResult(agent.gradeQuiz(quiz.getId(), answers));
     }
 
     private void grade(String args) {
