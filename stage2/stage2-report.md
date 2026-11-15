@@ -193,8 +193,6 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 | F10 Weak topics | https://youtu.be/NNKIedmG39c | full clip | GUI |
 | F11 Progress history | https://youtu.be/cM47AANV8Fc | full clip | GUI |
 | F12 NL multi-step (AI) | https://youtu.be/nSnLi25dHUg | full clip | GUI |
-| CLI smoke (recommended add-on) | *record ~60–90s CLI: `course` → `upload` → `demo-quiz` → `weak`* | full clip | CLI |
+| CLI demo (collective GUI+CLI requirement) | https://youtu.be/f8L4s0piOZg | full clip | CLI |
 
-**PDF requirement reminder:** recordings must collectively show **both GUI and CLI**. If no CLI clip is linked yet, add one short CLI video and paste its URL in the last row before PDF export.
-
-Do not show API keys on screen.
+Recordings collectively show **both GUI and CLI**. Do not show API keys on screen.
