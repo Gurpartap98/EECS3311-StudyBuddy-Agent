@@ -89,7 +89,11 @@ Every Stage 1 feature (F01–F12) is implemented. None were removed. Collaborati
 - **Roles:** Subject `ProgressTracker`; observer `ProgressView` (`update`); events from `QuizEngine.grade` / `record`.
 - **Stage 1:** Matches.
 
-**UML:** Stage 1 class diagram `stage1/diagrams/Class.png` (+ `.uxf`). Implemented packages mirror that design (`agent`, `tools`, `llm`, `quiz`, `store`, `progress`, `ui`, `domain`). Use-case diagram `stage1/diagrams/use_case.png` still covers F01–F12. Sequence diagrams exist for upload, summarize, Q&A, quiz, grade, NL (`stage1/diagrams/Seq_*.png`); runtime flows match those collaborations.
+**UML (updated for Stage 2):**
+- Class diagram PNG: `stage2/diagrams/Class_Stage2.png` (also updated `stage1/diagrams/Class.png`)
+- UMLet source to re-open/edit: `stage2/diagrams/Class_Stage2.uxf` (same content as `stage1/diagrams/Class.uxf`)
+- Use-case diagram `stage1/diagrams/use_case.png` still covers F01–F12 (unchanged features)
+- Sequence diagrams `stage1/diagrams/Seq_*.png` still match collaborations (UI → Facade → Tool → `LLMClient` → store); Stage 1 “OllamaClient” boxes are now any Strategy implementation (Groq primary)
 
 ---
 
