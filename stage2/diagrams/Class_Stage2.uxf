@@ -11,7 +11,9 @@
     </coordinates>
     <panel_attributes>StudyBuddy Agent — Stage 2 class diagram
 Updated Nov 2026 to match implementation
-(multi-LLM Strategy, JSON store, GUI/CLI views)</panel_attributes>
+(multi-LLM Strategy, JSON store, GUI/CLI views).
+Canonical PNG layout: stage2/diagrams/Class_Stage2.png
+(open that PNG if boxes look cramped in UMLet).</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

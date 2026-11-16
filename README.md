@@ -32,22 +32,21 @@ mvn -q exec:java -Dexec.args="cli"   # interactive CLI
 mvn -q exec:java -Dexec.args="gui"   # Swing GUI
 ```
 
-### CLI demo script (no API key required)
+### CLI demo (matches recorded CLI video)
 
 ```text
-course EECS 3311|EECS3311|FW26
+course EECS3311|3311|FW26
+courses
 upload <courseId> data/samples/os-scheduling.txt
-materials <courseId>
 demo-quiz <courseId>
-quizzes <courseId>
-take-quiz <quizId>
 weak <courseId>
 history <courseId>
 plan <courseId>
-nl What is Round Robin scheduling?
+quit
 ```
 
-With a Groq key, also try: `summarize`, `concepts`, `flashcards`, `review`, AI `quiz`, and multi-step `nl summarize then make flashcards`.
+After `demo-quiz`, answer the MCQ prompts interactively (questions appear automatically).  
+Type `help` for the full command list. With a Groq key you can also try: `summarize`, `concepts`, `flashcards`, `ask`, AI `quiz`, and `nl summarize then make flashcards`.
 
 ### Free LLM setup (recommended: Groq)
 
