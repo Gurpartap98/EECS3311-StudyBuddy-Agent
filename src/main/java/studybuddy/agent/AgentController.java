@@ -232,8 +232,7 @@ public final class AgentController {
         store.save(quiz);
         return Result.ok(
                 "Created demo quiz \"" + quiz.getTitle() + "\" with " + quiz.size()
-                        + " MCQ questions\nQuiz id: " + quiz.getId()
-                        + "\n(Next: take-quiz " + quiz.getId() + "   — or just re-run demo-quiz after git pull)",
+                        + " MCQ questions\nQuiz id: " + quiz.getId(),
                 Map.of("quiz", quiz, "quizId", quiz.getId()));
     }
 

@@ -1,0 +1,22 @@
+# StudyBuddy Agent — sample task file (Stage 2/3 standalone CLI)
+# Run:
+#   mvn -q -DskipTests package
+#   java -jar target/Agent.jar -LLMAPI -input examples/task.txt
+#
+# Placeholders filled automatically after earlier commands:
+#   $COURSE    last created course id
+#   $MATERIAL  last uploaded material id
+#   $QUIZ      last created quiz id
+
+course Stage2 Demo|3311|FW26
+courses
+upload $COURSE data/samples/os-scheduling.txt
+materials $COURSE
+demo-quiz $COURSE
+quizzes $COURSE
+# Intentionally miss some answers so weak-topics / history are visible
+grade $QUIZ a,a,a
+weak $COURSE
+history $COURSE
+plan $COURSE
+quit

@@ -1,6 +1,10 @@
 package studybuddy.ui;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,21 +23,33 @@ import studybuddy.tools.Result;
 
 /**
  * Command-line view that delegates all work to {@link AgentController} (MVC).
+ * Supports interactive stdin and non-interactive {@code -input task.txt} batch mode.
  */
 public final class StudyCLI {
 
     private final AgentController agent;
     private final Scanner in;
     private final PrintStream out;
+    private final boolean interactive;
+
+    /** Last IDs for $COURSE / $MATERIAL / $QUIZ substitution in task files. */
+    private String lastCourseId = "";
+    private String lastMaterialId = "";
+    private String lastQuizId = "";
 
     public StudyCLI(AgentController agent) {
-        this(agent, new Scanner(System.in), System.out);
+        this(agent, new Scanner(System.in), System.out, true);
     }
 
     public StudyCLI(AgentController agent, Scanner in, PrintStream out) {
+        this(agent, in, out, true);
+    }
+
+    public StudyCLI(AgentController agent, Scanner in, PrintStream out, boolean interactive) {
         this.agent = agent;
         this.in = in;
         this.out = out;
+        this.interactive = interactive;
     }
 
     public void run() {
@@ -52,8 +68,51 @@ public final class StudyCLI {
                 out.println("Bye.");
                 break;
             }
-            handle(line);
+            handle(expandPlaceholders(line));
         }
+    }
+
+    /**
+     * Batch mode: read CLI commands from a task file (Stage 2/3 standalone CLI requirement).
+     * Lines starting with {@code #} are comments. Supports {@code $COURSE}, {@code $MATERIAL}, {@code $QUIZ}.
+     */
+    public void runFromFile(Path taskFile) {
+        out.println("StudyBuddy CLI — batch mode from file: " + taskFile.toAbsolutePath());
+        out.println("LLM: " + agent.getLlm().describe());
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(taskFile, StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Cannot read task file: " + ex.getMessage(), ex);
+        }
+        for (String raw : lines) {
+            String line = raw.trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            if (line.equalsIgnoreCase("quit") || line.equalsIgnoreCase("exit")) {
+                out.println("Bye.");
+                break;
+            }
+            String expanded = expandPlaceholders(line);
+            out.println("studybuddy> " + expanded);
+            handle(expanded);
+        }
+        out.println("Batch finished.");
+    }
+
+    private String expandPlaceholders(String line) {
+        String outLine = line;
+        if (!lastCourseId.isBlank()) {
+            outLine = outLine.replace("$COURSE", lastCourseId);
+        }
+        if (!lastMaterialId.isBlank()) {
+            outLine = outLine.replace("$MATERIAL", lastMaterialId);
+        }
+        if (!lastQuizId.isBlank()) {
+            outLine = outLine.replace("$QUIZ", lastQuizId);
+        }
+        return outLine;
     }
 
     private void handle(String line) {
@@ -70,8 +129,8 @@ public final class StudyCLI {
                 case "delete" -> printResult(agent.deleteCourse(args));
                 case "upload" -> upload(args);
                 case "materials" -> listMaterials(args);
-                case "summarize" -> printResult(agent.summarize(args));
-                case "concepts" -> printResult(agent.extractConcepts(args));
+                case "summarize" -> printResult(agent.summarize(expandId(args)));
+                case "concepts" -> printResult(agent.extractConcepts(expandId(args)));
                 case "ask" -> printResult(agent.ask(args));
                 case "flashcards" -> flashcards(args);
                 case "review" -> reviewFlashcards(args);
@@ -90,6 +149,13 @@ public final class StudyCLI {
         } catch (RuntimeException ex) {
             out.println("Error: " + ex.getMessage());
         }
+    }
+
+    private String expandId(String id) {
+        if (id == null) {
+            return "";
+        }
+        return expandPlaceholders(id.trim());
     }
 
     private void printHelp() {
@@ -118,6 +184,14 @@ public final class StudyCLI {
                   ailog
                   nl <natural language request>
                   quit
+
+                Batch / task-file placeholders:
+                  $COURSE    last created/selected course id
+                  $MATERIAL  last uploaded material id
+                  $QUIZ      last created demo/AI quiz id
+
+                Batch example:
+                  java -jar Agent.jar -LLMAPI -input examples/task.txt
                 """);
     }
 
@@ -149,6 +223,7 @@ public final class StudyCLI {
         Result result = agent.createCourse(name, code, term);
         if (result.isSuccess() && result.get("course") instanceof Course created) {
             agent.setActiveCourseId(created.getId());
+            lastCourseId = created.getId();
         }
         printResult(result);
     }
@@ -168,12 +243,15 @@ public final class StudyCLI {
             out.println("Usage: upload <courseId> <path>");
             return;
         }
-        agent.setActiveCourseId(bits[0]);
-        Result result = agent.upload(bits[0], bits[1]);
+        String courseId = expandId(bits[0]);
+        agent.setActiveCourseId(courseId);
+        lastCourseId = courseId;
+        Result result = agent.upload(courseId, bits[1]);
         if (result.isSuccess()) {
-            Object materialId = result.get("materialId");
+            Object materialId = result.getData().get("materialId");
             if (materialId != null) {
-                agent.setActiveMaterialId(String.valueOf(materialId));
+                lastMaterialId = String.valueOf(materialId);
+                agent.setActiveMaterialId(lastMaterialId);
             }
         }
         printResult(result);
@@ -184,7 +262,8 @@ public final class StudyCLI {
             out.println("Usage: materials <courseId>");
             return;
         }
-        List<Material> materials = agent.getStore().listMaterials(courseId);
+        String cid = expandId(courseId);
+        List<Material> materials = agent.getStore().listMaterials(cid);
         if (materials.isEmpty()) {
             out.println("(no materials)");
             return;
@@ -239,7 +318,8 @@ public final class StudyCLI {
             out.println("Usage: demo-quiz <courseId>");
             return;
         }
-        Result created = agent.createDemoQuiz(courseId.trim());
+        String cid = expandId(courseId);
+        Result created = agent.createDemoQuiz(cid);
         printResult(created);
         if (!created.isSuccess()) {
             return;
@@ -252,10 +332,16 @@ public final class StudyCLI {
             quizId = quiz.getId();
         }
         if (!quizId.isBlank()) {
+            lastQuizId = quizId;
+        }
+        // Interactive sessions auto-start take-quiz; batch (-input) uses grade $QUIZ ...
+        if (interactive && !quizId.isBlank()) {
             out.println();
             out.println(">>> Starting the quiz now (questions appear below). <<<");
             out.println();
             takeQuiz(quizId);
+        } else if (!quizId.isBlank()) {
+            out.println("Batch mode: quiz created. Use: grade $QUIZ b,b,a   (or take-quiz in interactive CLI)");
         }
     }
 
@@ -265,11 +351,15 @@ public final class StudyCLI {
             out.println("Usage: quiz <courseId> [materialId] [count]");
             return;
         }
-        String courseId = bits[0];
-        String materialId = bits.length > 1 ? bits[1] : "";
+        String courseId = expandId(bits[0]);
+        String materialId = bits.length > 1 ? expandId(bits[1]) : "";
         int count = bits.length > 2 ? Integer.parseInt(bits[2]) : 5;
         QuizSpec spec = new QuizSpec(courseId, materialId, count, "medium", QuestionSpec.Kind.MCQ, "");
-        printResult(agent.generateQuiz(spec));
+        Result result = agent.generateQuiz(spec);
+        if (result.isSuccess() && result.getData().get("quiz") instanceof Quiz q) {
+            lastQuizId = q.getId();
+        }
+        printResult(result);
     }
 
     private void listQuizzes(String courseId) {
@@ -277,7 +367,7 @@ public final class StudyCLI {
             out.println("Usage: quizzes <courseId>");
             return;
         }
-        List<Quiz> quizzes = agent.getStore().listQuizzes(courseId);
+        List<Quiz> quizzes = agent.getStore().listQuizzes(expandId(courseId));
         if (quizzes.isEmpty()) {
             out.println("(no quizzes)");
             return;
@@ -339,11 +429,20 @@ public final class StudyCLI {
             out.println("Usage: grade <quizId> <a1,a2,...>");
             return;
         }
-        Quiz quiz = agent.getStore().findQuiz(bits[0]).orElse(null);
+        String quizKey = expandId(bits[0]);
+        Quiz quiz = agent.getStore().findQuiz(quizKey).orElse(null);
+        if (quiz == null) {
+            List<Quiz> forCourse = agent.getStore().listQuizzes(quizKey);
+            if (!forCourse.isEmpty()) {
+                quiz = forCourse.get(forCourse.size() - 1);
+                quizKey = quiz.getId();
+            }
+        }
         if (quiz == null) {
             out.println("Quiz not found: " + bits[0]);
             return;
         }
+        lastQuizId = quiz.getId();
         String[] rawAnswers = bits[1].split(",");
         Map<String, String> answers = new LinkedHashMap<>();
         List<Question> questions = quiz.getQuestions();
@@ -351,7 +450,7 @@ public final class StudyCLI {
             String ans = i < rawAnswers.length ? rawAnswers[i].trim() : "";
             answers.put(questions.get(i).getId(), ans);
         }
-        printResult(agent.gradeQuiz(bits[0], answers));
+        printResult(agent.gradeQuiz(quiz.getId(), answers));
     }
 
     private void plan(String args) {
@@ -360,9 +459,10 @@ public final class StudyCLI {
             out.println("Usage: plan <courseId> [hours] [examDate]");
             return;
         }
+        String courseId = expandId(bits[0]);
         double hours = bits.length > 1 ? Double.parseDouble(bits[1]) : 2.0;
         LocalDate exam = bits.length > 2 ? LocalDate.parse(bits[2]) : LocalDate.now().plusWeeks(2);
-        printResult(agent.generatePlan(new PlanSpec(bits[0], hours, exam, "")));
+        printResult(agent.generatePlan(new PlanSpec(courseId, hours, exam, "")));
     }
 
     private void weak(String courseId) {
@@ -370,14 +470,16 @@ public final class StudyCLI {
             out.println("Usage: weak <courseId>");
             return;
         }
-        List<String> weak = agent.getProgressTracker().weakTopics(courseId);
+        String cid = expandId(courseId);
+        List<String> weak = agent.getProgressTracker().weakTopics(cid);
         out.println(weak.isEmpty() ? "(no weak topics yet — take a quiz first)" : weak);
     }
 
     private void history(String courseId) {
-        var events = courseId.isBlank()
+        String cid = courseId.isBlank() ? "" : expandId(courseId);
+        var events = cid.isBlank()
                 ? agent.getProgressTracker().history()
-                : agent.getProgressTracker().historyForCourse(courseId);
+                : agent.getProgressTracker().historyForCourse(cid);
         if (events.isEmpty()) {
             out.println("(no progress history yet)");
             return;

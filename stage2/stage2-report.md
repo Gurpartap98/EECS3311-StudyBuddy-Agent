@@ -13,7 +13,13 @@
 
 StudyBuddy Agent is a Java (Maven) AI study assistant for students who want help studying from **their own notes**. Users create courses, upload TXT/MD/PDF materials, then use an agent facade (`AgentController`) to summarize, extract concepts, answer questions, generate flashcards/quizzes/study plans, grade attempts, and track weak topics / history.
 
-**Interfaces:** Swing **GUI** (`StudyGUI`) and interactive **CLI** (`StudyCLI`). Both call the same facade.
+**Interfaces:** Swing **GUI** (`StudyGUI`) and standalone **CLI** (`StudyCLI`). Both call the same facade.  
+The CLI runs interactively from a terminal **or** non-interactively from a task file:
+
+```bash
+mvn -q -DskipTests package
+java -jar target/Agent.jar -LLMAPI -input examples/task.txt
+```
 
 **LLM integration:** Strategy pattern via `LLMClient` with `GroqClient`, `GeminiClient`, `OpenRouterClient`, `OllamaClient`, and `StubLLMClient`. Keys load from local `.env` (gitignored). Calls are wrapped by `LoggingLLMClient` → `AiUsageLog` for token/cost estimates. Meaningful agent behavior includes planning (`Planner`), tool use (`ToolManager` + tools), retrieval (`RetrievalTool`), multi-step NL (`handleRequest` / F12), and progress memory (`ProgressTracker`).
 
@@ -166,9 +172,11 @@ Base: https://github.com/Gurpartap98/EECS3311-StudyBuddy-Agent/commit/
 - Defects fixed during Period 3: materials list refresh on Linux, course UUID display, study-plan fallback messaging, Groq model/rate-limit handling
 
 ### Submission artifacts
-- `stage2/stage2-report.pdf` committed in the repository
+- `stage2/stage2-report.pdf` / root `stage2-report.pdf`
 - Feature demos (GUI) + CLI demo indexed in §7
-- Updated UML under `stage2/diagrams/` (class, use-case, sequences)
+- Screenshots in `stage2/screenshots/` (§8)
+- Standalone fat JAR: `mvn package` → `target/Agent.jar` (§9)
+- Updated UML under `stage2/diagrams/`
 
 ---
 
@@ -193,6 +201,67 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 | F10 Weak topics | https://youtu.be/NNKIedmG39c | full clip | GUI |
 | F11 Progress history | https://youtu.be/cM47AANV8Fc | full clip | GUI |
 | F12 NL multi-step (AI) | https://youtu.be/nSnLi25dHUg | full clip | GUI |
-| CLI demo (collective GUI+CLI requirement) | https://youtu.be/f8L4s0piOZg | full clip | CLI |
+| CLI demo | https://youtu.be/f8L4s0piOZg | full clip | CLI |
+| GUI-then-CLI combined (Nov 24 update) | *add Zoom link after recording* | full clip | GUI + CLI |
 
-Recordings collectively show **both GUI and CLI**. Do not show API keys on screen.
+**Nov 24 combined demo:** one Zoom recording that shows completing a study task in the **GUI**, then the same workflow via **CLI** (`java -jar target/Agent.jar -LLMAPI -input examples/task.txt`). Do not show API keys on screen.
+
+---
+
+## 8. Feature screenshots and implementation notes
+
+Screenshots live in [`stage2/screenshots/`](screenshots/).  
+**CLI screenshots** were captured from a live `java -jar target/Agent.jar -LLMAPI -input examples/task.txt` run.  
+**GUI rows** reference the existing YouTube demos; replace `*-gui.png` with a Pause+Screenshot from each video before Nov 24 if the instructor wants still frames in addition to video links.
+
+| Feature | Original Stage 1 requirement | How implemented | Screenshot(s) | Differs from Stage 1? |
+|---|---|---|---|---|
+| F01 | Create/manage courses | `AgentController.createCourse` + `JsonDocumentStore`; GUI buttons / CLI `course` | `F01-cli-create-course.png`, `F01-gui.png` | No |
+| F02 | Upload learning materials | `MaterialImportTool` extracts TXT/MD/PDF (PDFBox) | `F02-cli-upload.png`, `F02-gui.png` | No (PDF support added in Stage 2) |
+| F03 | Summarize | `SummarizeTool` → `LLMClient.generate` | `F03-gui.png` + video | LLM provider: Groq Strategy instead of Ollama-only |
+| F04 | Concept extraction | `ConceptTool` → parse lines → `saveConcepts` | `F04-gui.png` + video | Same as F03 LLM change |
+| F05 | Q&A over materials | `RetrievalTool.retrieve` + QA prompt | `F05-gui.png` + video | Keyword retrieval (documented limitation) |
+| F06 | Study plan | `StudyPlanTool` LLM or deterministic fallback | `F06-cli-plan.png`, `F06-gui.png` | Fallback ensures plan without API key |
+| F07 | Flashcards | `FlashcardTool` + `FlashcardReview` | `F07-gui.png` + video | Same LLM Strategy |
+| F08 | Quiz generation | `QuizTool` + Factory Method; `createDemoQuiz` offline | `F08-cli-demo-quiz.png`, `F08-gui-*.png` | Demo path added for reliable grading demos |
+| F09 | Grade + explain | `QuizEngine.grade` + `ExplainTool` + `ProgressTracker.record` | `F09-cli-grade.png`, `F09-gui-*.png` | No |
+| F10 | Weak topics | `ProgressTracker.weakTopics` | `F10-cli-weak.png`, `F10-gui.png` | No |
+| F11 | Progress history | `ProgressTracker.history` | `F11-cli-history.png`, `F11-gui.png` | Persisted to `progress.json` |
+| F12 | NL multi-step | `Planner` + `handleRequest` + `ToolManager` | `F12-gui.png` + video | No |
+| CLI batch | Standalone terminal agent | `StudyBuddyApp` + `-input` task file + fat `Agent.jar` | `CLI-standalone-batch.png`, `CLI-video.png` | Added for Stage 2/3 CLI requirement |
+
+### Sample CLI screenshots (live Agent.jar run)
+
+![Standalone CLI batch](screenshots/CLI-standalone-batch.png)
+
+![F01 CLI create course](screenshots/F01-cli-create-course.png)
+
+![F02 CLI upload](screenshots/F02-cli-upload.png)
+
+![F08 CLI demo quiz](screenshots/F08-cli-demo-quiz.png)
+
+![F09 CLI grade](screenshots/F09-cli-grade.png)
+
+![F10 CLI weak topics](screenshots/F10-cli-weak.png)
+
+![F11 CLI history](screenshots/F11-cli-history.png)
+
+![F06 CLI study plan](screenshots/F06-cli-plan.png)
+
+---
+
+## 9. Standalone CLI (file / stdin / terminal)
+
+**Build:** `mvn -q -DskipTests package` → `target/Agent.jar`
+
+**Run task file (matches instructor example style):**
+
+```bash
+java -jar target/Agent.jar -LLMAPI -input examples/task.txt
+```
+
+**Options:** `gui` | `cli` | `-input <file>` | `-LLMAPI` | `help` (see README).  
+**Placeholders in task files:** `$COURSE`, `$MATERIAL`, `$QUIZ`.  
+**Working example file:** `examples/task.txt`.
+
+This CLI is required for Stage 3 automation; interactive and batch modes share `StudyCLI` → `AgentController`.
