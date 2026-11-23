@@ -202,9 +202,9 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 | F11 Progress history | https://youtu.be/cM47AANV8Fc | full clip | GUI |
 | F12 NL multi-step (AI) | https://youtu.be/nSnLi25dHUg | full clip | GUI |
 | CLI demo | https://youtu.be/f8L4s0piOZg | full clip | CLI |
-| GUI-then-CLI combined (Nov 24 update) | *add Zoom link after recording* | full clip | GUI + CLI |
+| GUI-then-CLI combined (Nov 24 update) | https://www.youtube.com/watch?v=umorkbnIZ_8 | full clip | GUI + CLI |
 
-**Nov 24 combined demo:** one Zoom recording that shows completing a study task in the **GUI**, then the same workflow via **CLI** (`java -jar target/Agent.jar -LLMAPI -input examples/task.txt`). Do not show API keys on screen.
+**Nov 24 combined demo:** https://www.youtube.com/watch?v=umorkbnIZ_8 — same study task in the **GUI**, then standalone **CLI** (`java -jar target/Agent.jar -LLMAPI -input examples/task.txt`). Do not show API keys on screen.
 
 ---
 
