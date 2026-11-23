@@ -211,8 +211,8 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 ## 8. Feature screenshots and implementation notes
 
 Screenshots live in [`stage2/screenshots/`](screenshots/).  
-**CLI screenshots** were captured from a live `java -jar target/Agent.jar -LLMAPI -input examples/task.txt` run.  
-**GUI rows** reference the existing YouTube demos; replace `*-gui.png` with a Pause+Screenshot from each video before Nov 24 if the instructor wants still frames in addition to video links.
+Add your **real** GUI (pause old videos) and CLI (terminal) stills there using the names in the table below.  
+Placeholder / generated images were removed — do not leave fake screenshots in the submission.
 
 | Feature | Original Stage 1 requirement | How implemented | Screenshot(s) | Differs from Stage 1? |
 |---|---|---|---|---|
@@ -230,23 +230,15 @@ Screenshots live in [`stage2/screenshots/`](screenshots/).
 | F12 | NL multi-step | `Planner` + `handleRequest` + `ToolManager` | `F12-gui.png` + video | No |
 | CLI batch | Standalone terminal agent | `StudyBuddyApp` + `-input` task file + fat `Agent.jar` | `CLI-standalone-batch.png`, `CLI-video.png` | Added for Stage 2/3 CLI requirement |
 
-### Sample CLI screenshots (live Agent.jar run)
+### How to capture CLI stills
 
-![Standalone CLI batch](screenshots/CLI-standalone-batch.png)
+```bash
+java -jar target/Agent.jar -LLMAPI -input examples/task-all-features.txt
+# or interactive: java -jar target/Agent.jar cli
+# then follow examples/CLI_TYPE_THIS.txt
+```
 
-![F01 CLI create course](screenshots/F01-cli-create-course.png)
-
-![F02 CLI upload](screenshots/F02-cli-upload.png)
-
-![F08 CLI demo quiz](screenshots/F08-cli-demo-quiz.png)
-
-![F09 CLI grade](screenshots/F09-cli-grade.png)
-
-![F10 CLI weak topics](screenshots/F10-cli-weak.png)
-
-![F11 CLI history](screenshots/F11-cli-history.png)
-
-![F06 CLI study plan](screenshots/F06-cli-plan.png)
+After you drop PNGs into `stage2/screenshots/`, re-embed them here (or paste into the PDF) before the final Nov 24 upload.
 
 ---
 
