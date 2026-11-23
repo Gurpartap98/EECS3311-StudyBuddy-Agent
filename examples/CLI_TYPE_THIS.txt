@@ -1,0 +1,98 @@
+StudyBuddy CLI — type/paste these IN ORDER in one session.
+After each successful result → take a screenshot of that result.
+
+Start:
+  cd ~/EECS3311-StudyBuddy-Agent
+  git pull
+  mvn -q -DskipTests package
+  java -jar target/Agent.jar cli
+
+------------------------------------------------------------
+F01 Create course
+  Screenshot: "OK: Created course" + courses list with the name
+------------------------------------------------------------
+course EECS3311|3311|FW26
+courses
+
+>>> Copy the long course id from the courses line. Call it COURSE_ID below.
+
+------------------------------------------------------------
+F02 Upload
+  Screenshot: "OK: Uploaded os-scheduling.txt" + materials list
+------------------------------------------------------------
+upload COURSE_ID data/samples/os-scheduling.txt
+materials COURSE_ID
+
+>>> Copy the material id from the materials line. Call it MATERIAL_ID.
+
+------------------------------------------------------------
+F03 Summarize  (needs Groq in .env)
+  Screenshot: full summary text under OK
+------------------------------------------------------------
+summarize MATERIAL_ID
+
+------------------------------------------------------------
+F04 Concepts  (needs Groq)
+  Screenshot: listed concepts
+------------------------------------------------------------
+concepts MATERIAL_ID
+
+------------------------------------------------------------
+F05 Q&A  (needs Groq)
+  Screenshot: the answer text
+------------------------------------------------------------
+ask What is Round Robin?
+
+------------------------------------------------------------
+F07 Flashcards  (needs Groq)
+  Screenshot: generated flashcards list
+------------------------------------------------------------
+flashcards MATERIAL_ID 5
+
+------------------------------------------------------------
+F08 Demo quiz
+  Screenshot: "Created demo quiz" + quizzes showing 3 questions
+------------------------------------------------------------
+demo-quiz COURSE_ID
+quizzes COURSE_ID
+
+>>> If demo-quiz auto-starts questions, answer a,a,a then screenshot the score (that also covers F09).
+>>> Or after create, copy QUIZ_ID from the message and run:
+grade QUIZ_ID a,a,a
+
+------------------------------------------------------------
+F09 Grade
+  Screenshot: Score: x/3 and OK/MISS lines
+------------------------------------------------------------
+(use grade as above if you did not already)
+
+------------------------------------------------------------
+F10 Weak topics
+  Screenshot: [CPU Scheduling] or similar
+------------------------------------------------------------
+weak COURSE_ID
+
+------------------------------------------------------------
+F11 History
+  Screenshot: history line with % score
+------------------------------------------------------------
+history COURSE_ID
+
+------------------------------------------------------------
+F06 Study plan
+  Screenshot: "Study plan ready" + session list
+------------------------------------------------------------
+plan COURSE_ID
+
+------------------------------------------------------------
+F12 NL multi-step  (needs Groq)
+  Screenshot: Plan (N step(s)) with summarize/flashcards OK
+------------------------------------------------------------
+nl summarize then make flashcards
+
+------------------------------------------------------------
+quit
+------------------------------------------------------------
+
+EASIER ALTERNATIVE (one command, then scroll + screenshot sections):
+  java -jar target/Agent.jar -LLMAPI -input examples/task-all-features.txt

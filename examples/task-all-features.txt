@@ -1,0 +1,23 @@
+# Full CLI feature pass (one process — scroll back to screenshot each block)
+# Run:
+#   java -jar target/Agent.jar -LLMAPI -input examples/task-all-features.txt
+#
+# Needs .env Groq key for summarize/concepts/ask/flashcards/nl (F03–F05, F07, F12).
+# Demo-quiz / grade / weak / history / plan work without a key.
+
+course EECS3311 AllFeatures|3311|FW26
+courses
+upload $COURSE data/samples/os-scheduling.txt
+materials $COURSE
+summarize $MATERIAL
+concepts $MATERIAL
+ask What is Round Robin scheduling?
+flashcards $MATERIAL 5
+demo-quiz $COURSE
+quizzes $COURSE
+grade $QUIZ a,a,a
+weak $COURSE
+history $COURSE
+plan $COURSE
+nl summarize then make flashcards
+quit
