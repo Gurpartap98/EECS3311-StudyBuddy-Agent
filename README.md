@@ -8,7 +8,7 @@ AI study assistant that plans multi-step workflows over the student’s own note
 ## Stages
 
 - **Stage 1 (Design)** — [`stage1/Stage1_Design_Report.md`](stage1/Stage1_Design_Report.md) and [`stage1/diagrams/`](stage1/diagrams/)
-- **Stage 2 (Implementation)** — Java Maven app + [`stage2/stage2-report.pdf`](stage2/stage2-report.pdf) / [`stage2-report.pdf`](stage2-report.pdf)
+- **Stage 2 (Implementation)** — Java Maven app + [`stage2-report.md`](stage2-report.md) / [`stage2-report.pdf`](stage2-report.pdf) (also under [`stage2/`](stage2/))
 - Stage 3 (Testing) — forthcoming (requires this standalone CLI)
 
 ## Requirements
