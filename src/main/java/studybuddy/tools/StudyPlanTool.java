@@ -94,6 +94,11 @@ public final class StudyPlanTool implements Tool {
                 }
                 try {
                     LocalDate date = LocalDate.parse(parts[0].trim());
+                    // Reject LLM hallucinations (e.g. 2024 dates when exam is weeks ahead)
+                    LocalDate today = LocalDate.now();
+                    if (date.isBefore(today.minusDays(1)) || date.isAfter(exam.plusWeeks(2))) {
+                        continue;
+                    }
                     String topic = parts[1].trim();
                     String task = parts[2].trim();
                     int minutes = Integer.parseInt(parts[3].trim().replaceAll("[^0-9]", ""));

@@ -14,8 +14,8 @@ upload $COURSE data/samples/os-scheduling.txt
 materials $COURSE
 demo-quiz $COURSE
 quizzes $COURSE
-# Intentionally miss some answers so weak-topics / history are visible
-grade $QUIZ a,a,a
+# Correct answers are b,b,b — miss the last one so weak topics still show
+grade $QUIZ b,b,a
 weak $COURSE
 history $COURSE
 plan $COURSE
