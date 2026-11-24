@@ -49,8 +49,10 @@ Every Stage 1 feature (F01–F12) is implemented. None were removed. Collaborati
 | F05 Q&A | F05 | Implemented | Hybrid | Ask/NL → `RetrievalTool.retrieve` (keyword) → `PromptBuilder.buildQA` → LLM answer | Strategy | https://youtu.be/sarW3iaAOv4 |
 | F06 Study plan | F06 | Implemented | Hybrid | `StudyPlanTool` uses weak topics + LLM **or** deterministic session list fallback | Observer, Strategy | https://youtu.be/JVwXBfdMlbc |
 | F07 Flashcards | F07 | Implemented | AI | `FlashcardTool` → LLM → parse → `FlashcardReview` / CLI `review` | Strategy | https://youtu.be/3P0SAX4RVes |
-| F08 Quiz generation | F08 | Implemented | AI + demo | `QuizTool` + Factory Method creators; `createDemoQuiz` for offline path | Factory Method | Demo https://youtu.be/ZHwMFiRK9qk · AI https://youtu.be/NP5qfThzWBs |
-| F09 Grade + explain | F09 | Implemented | Hybrid | `QuizView`/`take-quiz` → `QuizEngine.grade` → `ExplainTool` → `ProgressTracker.record` | Observer | Demo https://youtu.be/GcM7pgDDRU8 · AI https://youtu.be/HB8ELp-WW3o |
+| F08a Demo Quiz | F08 | Implemented | Deterministic | `AgentController.createDemoQuiz` + Factory Method MCQs (no LLM) | Factory Method | https://youtu.be/ZHwMFiRK9qk |
+| F08b Quiz (AI) | F08 | Implemented | AI | `QuizTool` + Factory Method from LLM-generated specs | Factory Method | https://youtu.be/NP5qfThzWBs |
+| F09a Grade Demo Quiz | F09 | Implemented | Hybrid | Demo quiz → `QuizEngine.grade` → `ExplainTool` → `ProgressTracker` | Observer | https://youtu.be/GcM7pgDDRU8 |
+| F09b Grade Quiz (AI) | F09 | Implemented | Hybrid | AI quiz → same grade/explain/progress path | Observer | https://youtu.be/HB8ELp-WW3o |
 | F10 Weak topics | F10 | Implemented | Hybrid | After grade → `ProgressTracker.weakTopics` → GUI/CLI | Observer | https://youtu.be/NNKIedmG39c |
 | F11 Progress history | F11 | Implemented | Deterministic | `ProgressTracker.history` → GUI History / CLI `history` | Observer | https://youtu.be/cM47AANV8Fc |
 | F12 NL commands | F12 | Implemented | Hybrid | Ask/NL multi-step → `Planner.parse` → `handleRequest` → `ToolManager` steps | Facade, Tool | https://youtu.be/nSnLi25dHUg |
@@ -62,7 +64,8 @@ Every Stage 1 feature (F01–F12) is implemented. None were removed. Collaborati
 - **F03–F04 / F07 / F08-AI:** User selects material → tool builds prompt → Strategy `LLMClient` → parse/store → output shown (and flashcard/quiz UI when applicable).
 - **F05:** Question → retrieve relevant materials → LLM answers with context.
 - **F06:** Plan tool reads course/weak topics → LLM plan or deterministic sessions → save `StudyPlan`.
-- **F08-demo / F09:** Demo quiz built via Factory Method without LLM → interactive answers → `QuizEngine` grades → Observer notifies progress view.
+- **F08a Demo Quiz / F09a:** Demo Quiz built via Factory Method without LLM → interactive answers → `QuizEngine` grades → Observer notifies progress view.
+- **F08b Quiz (AI) / F09b:** LLM quiz generation → same grade/explain/progress path as Demo Quiz.
 - **F10–F11:** Progress events from grading → weak-topic aggregation and history list.
 - **F12:** NL text → Planner selects tools (e.g. summarize then flashcards) → ToolManager executes sequence.
 
@@ -231,10 +234,10 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 | F05 Q&A (AI) | https://youtu.be/sarW3iaAOv4 | full clip | GUI |
 | F06 Study plan | https://youtu.be/JVwXBfdMlbc | full clip | GUI |
 | F07 Flashcards (AI) | https://youtu.be/3P0SAX4RVes | full clip | GUI |
-| F08 Demo quiz | https://youtu.be/ZHwMFiRK9qk | full clip | GUI |
-| F08 Quiz (AI) | https://youtu.be/NP5qfThzWBs | full clip | GUI |
-| F09 Grade demo quiz | https://youtu.be/GcM7pgDDRU8 | full clip | GUI |
-| F09 Grade Quiz (AI) | https://youtu.be/HB8ELp-WW3o | full clip | GUI |
+| F08a Demo Quiz (deterministic) | https://youtu.be/ZHwMFiRK9qk | full clip | GUI |
+| F08b Quiz (AI) | https://youtu.be/NP5qfThzWBs | full clip | GUI |
+| F09a Grade Demo Quiz | https://youtu.be/GcM7pgDDRU8 | full clip | GUI |
+| F09b Grade Quiz (AI) | https://youtu.be/HB8ELp-WW3o | full clip | GUI |
 | F10 Weak topics | https://youtu.be/NNKIedmG39c | full clip | GUI |
 | F11 Progress history | https://youtu.be/cM47AANV8Fc | full clip | GUI |
 | F12 NL multi-step (AI) | https://youtu.be/nSnLi25dHUg | full clip | GUI |
@@ -306,25 +309,41 @@ Screenshot files: [`stage2/screenshots/`](screenshots/). Combined demo: https://
 ![GUI F07](screenshots/GUI_F07_screenshot.png)
 ![CLI F07](screenshots/CLI_F07_screenshot.png)
 
-### F08 — Quiz generation
-- **Original requirement:** Generate quizzes from materials (Factory Method for question types).
-- **How implemented:** AI path: `QuizTool` + `QuizFactory` / `MCQQuestionFactory`. Offline path: `createDemoQuiz` builds a fixed CPU-scheduling MCQ set so quizzes/grading demos work without LLM.
-- **Differs from Stage 1?** Added the **demo quiz** path for reliable TA demos and Stage 3 automation; AI quiz remains the Stage 1 path.
-- **Screenshots:**
-![GUI F08 demo](screenshots/GUI_F08_demo_quiz_screenshot.png)
-![GUI F08 AI](screenshots/GUI_F08_QUIZ_screenshot.png)
-![CLI F08 demo](screenshots/CLI_F08_demo_quiz_screenshot.png)
-![CLI F08 list](screenshots/CLI_F08_QUIZ_screenshot.png)
+### F08 — Quiz generation (two paths: Demo Quiz vs Quiz AI)
 
-### F09 — Grade + explain
-- **Original requirement:** Grade answers and explain misses.
-- **How implemented:** `QuizEngine.grade` scores MCQ/short answers; `ExplainTool` explains misses; `ProgressTracker.record` notifies Observer UI / CLI.
-- **Differs from Stage 1?** No — grading/explain/progress flow matches Stage 1.
-- **Screenshots:**
-![GUI F09 demo](screenshots/GUI_F09_demo_quiz_screenshot.png)
-![GUI F09 AI](screenshots/GUI_F09_QUIZ_screenshot.png)
-![CLI F09 demo](screenshots/CLI_F09_demo_quiz_grade_screenshot.png)
-![CLI F09 grade](screenshots/CLI_F09_QUIZ_Grade_screenshot.png)
+#### F08a — Demo Quiz (deterministic, no LLM)
+- **Original requirement:** Part of F08 quiz capability; offline/reliable path added in Stage 2.
+- **How implemented:** GUI **Demo Quiz** / CLI `demo-quiz` → `AgentController.createDemoQuiz` → Factory Method MCQs on CPU scheduling.
+- **Differs from Stage 1?** New offline path so TAs can run quizzes without an API key.
+- **Screenshots (Demo Quiz):**
+![GUI F08 Demo Quiz](screenshots/GUI_F08_demo_quiz_screenshot.png)
+![CLI F08 Demo Quiz](screenshots/CLI_F08_demo_quiz_screenshot.png)
+
+#### F08b — Quiz (AI)
+- **Original requirement:** Generate quizzes from materials via LLM (Factory Method for question types).
+- **How implemented:** GUI **Quiz (AI)** / CLI `quiz` → `QuizTool` → LLM → `QuizFactory` products.
+- **Differs from Stage 1?** Provider only (Groq Strategy); feature intent unchanged.
+- **Screenshots (Quiz AI):**
+![GUI F08 Quiz AI](screenshots/GUI_F08_QUIZ_screenshot.png)
+![CLI F08 Quiz AI](screenshots/CLI_F08_QUIZ_screenshot.png)
+
+### F09 — Grade + explain (two paths: Demo Quiz grade vs Quiz AI grade)
+
+#### F09a — Grade Demo Quiz
+- **Original requirement:** Grade answers and explain misses (applied to the Demo Quiz).
+- **How implemented:** Submit Demo Quiz → `QuizEngine.grade` → `ExplainTool` → `ProgressTracker.record` (Observer).
+- **Differs from Stage 1?** No — same grading pipeline; input quiz is the deterministic Demo Quiz.
+- **Screenshots (Demo Quiz grade):**
+![GUI F09 Demo Quiz grade](screenshots/GUI_F09_demo_quiz_screenshot.png)
+![CLI F09 Demo Quiz grade](screenshots/CLI_F09_demo_quiz_grade_screenshot.png)
+
+#### F09b — Grade Quiz (AI)
+- **Original requirement:** Grade answers and explain misses (applied to an AI-generated quiz).
+- **How implemented:** Submit Quiz (AI) → same `QuizEngine` / `ExplainTool` / `ProgressTracker` path as F09a.
+- **Differs from Stage 1?** No — same grading pipeline; input quiz comes from F08b.
+- **Screenshots (Quiz AI grade):**
+![GUI F09 Quiz AI grade](screenshots/GUI_F09_QUIZ_screenshot.png)
+![CLI F09 Quiz AI grade](screenshots/CLI_F09_QUIZ_Grade_screenshot.png)
 
 ### F10 — Weak topics
 - **Original requirement:** Identify weak topics from quiz performance.
