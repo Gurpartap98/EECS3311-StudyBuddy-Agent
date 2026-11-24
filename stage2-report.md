@@ -210,35 +210,78 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 
 ## 8. Feature screenshots and implementation notes
 
-Screenshots live in [`stage2/screenshots/`](screenshots/).  
-Add your **real** GUI (pause old videos) and CLI (terminal) stills there using the names in the table below.  
-Placeholder / generated images were removed — do not leave fake screenshots in the submission.
+Screenshots live in [`stage2/screenshots/`](screenshots/) (real GUI + CLI captures).  
+Combined GUI→CLI demo: https://www.youtube.com/watch?v=umorkbnIZ_8
 
 | Feature | Original Stage 1 requirement | How implemented | Screenshot(s) | Differs from Stage 1? |
 |---|---|---|---|---|
-| F01 | Create/manage courses | `AgentController.createCourse` + `JsonDocumentStore`; GUI buttons / CLI `course` | `F01-cli-create-course.png`, `F01-gui.png` | No |
-| F02 | Upload learning materials | `MaterialImportTool` extracts TXT/MD/PDF (PDFBox) | `F02-cli-upload.png`, `F02-gui.png` | No (PDF support added in Stage 2) |
-| F03 | Summarize | `SummarizeTool` → `LLMClient.generate` | `F03-gui.png` + video | LLM provider: Groq Strategy instead of Ollama-only |
-| F04 | Concept extraction | `ConceptTool` → parse lines → `saveConcepts` | `F04-gui.png` + video | Same as F03 LLM change |
-| F05 | Q&A over materials | `RetrievalTool.retrieve` + QA prompt | `F05-gui.png` + video | Keyword retrieval (documented limitation) |
-| F06 | Study plan | `StudyPlanTool` LLM or deterministic fallback | `F06-cli-plan.png`, `F06-gui.png` | Fallback ensures plan without API key |
-| F07 | Flashcards | `FlashcardTool` + `FlashcardReview` | `F07-gui.png` + video | Same LLM Strategy |
-| F08 | Quiz generation | `QuizTool` + Factory Method; `createDemoQuiz` offline | `F08-cli-demo-quiz.png`, `F08-gui-*.png` | Demo path added for reliable grading demos |
-| F09 | Grade + explain | `QuizEngine.grade` + `ExplainTool` + `ProgressTracker.record` | `F09-cli-grade.png`, `F09-gui-*.png` | No |
-| F10 | Weak topics | `ProgressTracker.weakTopics` | `F10-cli-weak.png`, `F10-gui.png` | No |
-| F11 | Progress history | `ProgressTracker.history` | `F11-cli-history.png`, `F11-gui.png` | Persisted to `progress.json` |
-| F12 | NL multi-step | `Planner` + `handleRequest` + `ToolManager` | `F12-gui.png` + video | No |
-| CLI batch | Standalone terminal agent | `StudyBuddyApp` + `-input` task file + fat `Agent.jar` | `CLI-standalone-batch.png`, `CLI-video.png` | Added for Stage 2/3 CLI requirement |
+| F01 | Create/manage courses | `AgentController.createCourse` + `JsonDocumentStore`; GUI / CLI `course` | `GUI_F01_screenshot.png`, `CLI_F01_screenshot.png` | No |
+| F02 | Upload learning materials | `MaterialImportTool` extracts TXT/MD/PDF (PDFBox) | `GUI_F02_screenshot.png`, `CLI_F02_screenshot.png` | PDF support added in Stage 2 |
+| F03 | Summarize | `SummarizeTool` → `LLMClient.generate` | `GUI_F03_screenshot.png`, `CLI_F03_screenshot.png` | Groq Strategy (not Ollama-only) |
+| F04 | Concept extraction | `ConceptTool` → parse lines → `saveConcepts` | `GUI_F04_screenshot.png`, `CLI_F04_screenshot.png` | Same LLM Strategy |
+| F05 | Q&A over materials | `RetrievalTool.retrieve` + QA prompt | `GUI_F05_screenshot.png`, `CLI_F05_screenshot.png` | Keyword retrieval (documented) |
+| F06 | Study plan | `StudyPlanTool` LLM or deterministic fallback | `GUI_F06_screenshot.png`, `CLI_F06_screenshot.png` | Fallback without API key |
+| F07 | Flashcards | `FlashcardTool` + `FlashcardReview` | `GUI_F07_screenshot.png`, `CLI_F07_screenshot.png` | Same LLM Strategy |
+| F08 | Quiz generation | `QuizTool` + Factory Method; `createDemoQuiz` | `GUI_F08_*`, `CLI_F08_*` (demo + AI) | Demo path for offline grading |
+| F09 | Grade + explain | `QuizEngine.grade` + `ExplainTool` + `ProgressTracker` | `GUI_F09_*`, `CLI_F09_*` | No |
+| F10 | Weak topics | `ProgressTracker.weakTopics` | `GUI_F10_screenshot.png`, `CLI_F10_screenshot.png` | No |
+| F11 | Progress history | `ProgressTracker.history` | `GUI_F11_screenshot.png`, `CLI_F11_screenshot.png` | Persisted to `progress.json` |
+| F12 | NL multi-step | `Planner` + `handleRequest` + `ToolManager` | `GUI_F12_screenshot.png`, `CLI_F12_screenshot.png` | No |
+| CLI batch | Standalone terminal agent | `java -jar Agent.jar -LLMAPI -input examples/task.txt` | combined demo video + CLI stills above | Stage 2/3 requirement |
 
-### How to capture CLI stills
+### Embedded screenshots (GUI then CLI per feature)
 
-```bash
-java -jar target/Agent.jar -LLMAPI -input examples/task-all-features.txt
-# or interactive: java -jar target/Agent.jar cli
-# then follow examples/CLI_TYPE_THIS.txt
-```
+#### F01 Create course
+![GUI F01](screenshots/GUI_F01_screenshot.png)
+![CLI F01](screenshots/CLI_F01_screenshot.png)
 
-After you drop PNGs into `stage2/screenshots/`, re-embed them here (or paste into the PDF) before the final Nov 24 upload.
+#### F02 Upload materials
+![GUI F02](screenshots/GUI_F02_screenshot.png)
+![CLI F02](screenshots/CLI_F02_screenshot.png)
+
+#### F03 Summarize
+![GUI F03](screenshots/GUI_F03_screenshot.png)
+![CLI F03](screenshots/CLI_F03_screenshot.png)
+
+#### F04 Concepts
+![GUI F04](screenshots/GUI_F04_screenshot.png)
+![CLI F04](screenshots/CLI_F04_screenshot.png)
+
+#### F05 Q&A
+![GUI F05](screenshots/GUI_F05_screenshot.png)
+![CLI F05](screenshots/CLI_F05_screenshot.png)
+
+#### F06 Study plan
+![GUI F06](screenshots/GUI_F06_screenshot.png)
+![CLI F06](screenshots/CLI_F06_screenshot.png)
+
+#### F07 Flashcards
+![GUI F07](screenshots/GUI_F07_screenshot.png)
+![CLI F07](screenshots/CLI_F07_screenshot.png)
+
+#### F08 Quiz (demo + AI)
+![GUI F08 demo](screenshots/GUI_F08_demo_quiz_screenshot.png)
+![GUI F08 AI](screenshots/GUI_F08_QUIZ_screenshot.png)
+![CLI F08 demo](screenshots/CLI_F08_demo_quiz_screenshot.png)
+![CLI F08 list](screenshots/CLI_F08_QUIZ_screenshot.png)
+
+#### F09 Grade (demo + AI)
+![GUI F09 demo](screenshots/GUI_F09_demo_quiz_screenshot.png)
+![GUI F09 AI](screenshots/GUI_F09_QUIZ_screenshot.png)
+![CLI F09 demo](screenshots/CLI_F09_demo_quiz_grade_screenshot.png)
+![CLI F09 grade](screenshots/CLI_F09_QUIZ_Grade_screenshot.png)
+
+#### F10 Weak topics
+![GUI F10](screenshots/GUI_F10_screenshot.png)
+![CLI F10](screenshots/CLI_F10_screenshot.png)
+
+#### F11 History
+![GUI F11](screenshots/GUI_F11_screenshot.png)
+![CLI F11](screenshots/CLI_F11_screenshot.png)
+
+#### F12 NL multi-step
+![GUI F12](screenshots/GUI_F12_screenshot.png)
+![CLI F12](screenshots/CLI_F12_screenshot.png)
 
 ---
 
