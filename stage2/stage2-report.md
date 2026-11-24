@@ -130,10 +130,47 @@ No Stage 1 features were dropped. No net reduction in design-pattern count.
 
 | Tool / platform | LLM / model | Used for | Token / money cost |
 |---|---|---|---|
-| Cursor Cloud Agent | Cursor Composer (default cloud agent) | Stage 2 Java implementation, tests, GUI/CLI fixes, report drafting | Approximate: development sessions across Oct 20–Nov 9; exact Cursor billing not exported here — student accepts responsibility for AI-assisted code |
+| Cursor Cloud Agent | Cursor Composer (default cloud agent; exact underlying model not always exposed) | Stage 2 Java implementation, tests, GUI/CLI fixes, report drafting | Approximate: development sessions across Oct 20–Nov 9; exact Cursor billing not exported — student accepts responsibility for AI-assisted code |
 | Runtime app LLM (Groq) | `qwen/qwen3.8-27b` (free tier) | F03–F05, F07, F08-AI, F12 demos | Free tier; per-call estimates logged by `LoggingLLMClient` → `data/ai-usage.log` / CLI `ailog` after local runs |
 
 Student reviewed and accepts responsibility for all AI-generated code. Real API keys are **not** committed (`.env` gitignored; `.env.example` placeholders only).
+
+### Representative AI–human collaboration interactions
+
+**Interaction 1 — Facade + tools scaffold**  
+- **Task:** Implement Stage 1 architecture (Facade, tools, quiz Factory Method).  
+- **Input / instruction:** Build `AgentController`, `ToolManager`, and quiz factories matching Stage 1 class design.  
+- **AI contribution:** Generated initial Java packages, tool stubs, and `MCQQuestionFactory` / `ShortAnswerQuestionFactory`.  
+- **Human contribution:** Reviewed against Stage 1 mapping; rejected UI-coupled logic; required every tool to implement `execute(ToolContext)`; verified Factory Method hierarchy (not a single static helper).  
+- **Outcome:** Core agent facade and tools committed; patterns match Stage 1 with Factory Method strengthened per Stage 1 feedback.
+
+**Interaction 2 — LLM Strategy + local secrets**  
+- **Task:** Swap LLM providers without rewriting tools; keep keys off GitHub.  
+- **Input / instruction:** Add Groq/Gemini/Ollama clients behind `LLMClient`, load from `.env`, document `.env.example`.  
+- **AI contribution:** Drafted Strategy clients, factory selection, dotenv loading, README setup steps.  
+- **Human contribution:** Confirmed `.gitignore` excludes `.env`; refused committing real keys; chose Groq free tier for demos; verified stub mode still runs deterministic features.  
+- **Outcome:** Strategy pattern live; Ollama retained; secrets policy satisfied.
+
+**Interaction 3 — GUI upload / materials list defect**  
+- **Task:** Fix Linux GUI where materials did not appear after upload.  
+- **Input / instruction:** Diagnose why Materials list stayed empty after choosing a file.  
+- **AI contribution:** Suggested selection-model / refresh timing fixes and removing a hard-coded “sample notes only” upload path.  
+- **Human contribution:** Reproduced on Linux Mint; insisted Upload Material must accept arbitrary files (TAs will not only use sample TXT); verified list refresh manually.  
+- **Outcome:** File-chooser upload works for any TXT/MD/PDF; demo videos recorded with real uploads.
+
+**Interaction 4 — Standalone CLI `-input` for Stage 2/3**  
+- **Task:** Meet professor example `java -jar Agent.jar -LLMAPI -input task.txt`.  
+- **Input / instruction:** Fat JAR + batch CLI with placeholders, document options in README.  
+- **AI contribution:** Implemented `ParsedArgs`, `StudyCLI.runFromFile`, `$COURSE`/`$MATERIAL`/`$QUIZ` expansion, shade plugin → `target/Agent.jar`.  
+- **Human contribution:** Ran end-to-end batch locally; recorded GUI→CLI demo; rejected committing fake screenshots; supplied real GUI/CLI PNGs.  
+- **Outcome:** Batch CLI works; combined demo https://www.youtube.com/watch?v=umorkbnIZ_8 ; screenshots in §8.
+
+**Interaction 5 — Report documentation completeness**  
+- **Task:** Satisfy Stage 2 report sections (mapping, patterns, changes, demos, feature docs).  
+- **Input / instruction:** Align report with Project-Stage2-Instruction.pdf; embed screenshots; explain diffs from Stage 1.  
+- **AI contribution:** Drafted §1–§9 structure, commit tables, pattern write-ups, screenshot embeds.  
+- **Human contribution:** Recorded all feature videos; captured real screenshots; challenged thin §8 / leftover README TODOs; required per-feature requirement → implementation → change rationale.  
+- **Outcome:** `stage2-report.md` / `stage2-report.pdf` with full §8 feature documentation and demo index.
 
 ---
 
