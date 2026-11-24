@@ -251,63 +251,63 @@ F09 AI grade and F10–F12 were uploaded on a second channel after the main chan
 ## 8. Feature documentation (requirement → implementation → screenshots)
 
 For each Stage 1 feature: **original requirement**, **how it is implemented**, **screenshots in action**, and **whether/why Stage 2 differs**.  
-Screenshot files: [`stage2/screenshots/`](screenshots/). Combined demo: https://www.youtube.com/watch?v=umorkbnIZ_8
+Screenshot files: [`stage2/screenshots/`](stage2/screenshots/). Combined demo: https://www.youtube.com/watch?v=umorkbnIZ_8
 
 ### F01 — Create / manage courses
 - **Original requirement:** Create and manage courses (name/code/term).
 - **How implemented:** GUI buttons and CLI `course` / `rename` / `archive` / `delete` call `AgentController` → `JsonDocumentStore` persists `Course` JSON under `data/`.
 - **Differs from Stage 1?** No — same facade + store design.
 - **Screenshots:**
-![GUI F01](screenshots/GUI_F01_screenshot.png)
-![CLI F01](screenshots/CLI_F01_screenshot.png)
+![GUI F01](stage2/screenshots/GUI_F01_screenshot.png)
+![CLI F01](stage2/screenshots/CLI_F01_screenshot.png)
 
 ### F02 — Upload learning materials
 - **Original requirement:** Upload student notes into a course.
 - **How implemented:** `MaterialImportTool` extracts text from `.txt` / `.md` / `.pdf` (Apache PDFBox) and saves a `Material` linked to the course.
 - **Differs from Stage 1?** Slightly — Stage 1 emphasized text notes; Stage 2 explicitly added **PDF** extraction so TAs can upload PDFs as well as sample TXT.
 - **Screenshots:**
-![GUI F02](screenshots/GUI_F02_screenshot.png)
-![CLI F02](screenshots/CLI_F02_screenshot.png)
+![GUI F02](stage2/screenshots/GUI_F02_screenshot.png)
+![CLI F02](stage2/screenshots/CLI_F02_screenshot.png)
 
 ### F03 — Summarize
 - **Original requirement:** Summarize uploaded materials with the LLM.
 - **How implemented:** `SummarizeTool` builds a prompt via `PromptBuilder`, calls Strategy `LLMClient.generate`, stores the summary on the `Material`, prints full text in GUI/CLI.
 - **Differs from Stage 1?** Provider only — Stage 1 assumed local Ollama; Stage 2 defaults to **Groq** (same `LLMClient` Strategy). Ollama remains available via `.env`.
 - **Screenshots:**
-![GUI F03](screenshots/GUI_F03_screenshot.png)
-![CLI F03](screenshots/CLI_F03_screenshot.png)
+![GUI F03](stage2/screenshots/GUI_F03_screenshot.png)
+![CLI F03](stage2/screenshots/CLI_F03_screenshot.png)
 
 ### F04 — Concept extraction
 - **Original requirement:** Extract key concepts from materials.
 - **How implemented:** `ConceptTool` → LLM → parse lines → `saveConcepts` on the material; GUI/CLI list the concepts.
 - **Differs from Stage 1?** Same as F03 (Groq Strategy instead of Ollama-only). Behavior unchanged.
 - **Screenshots:**
-![GUI F04](screenshots/GUI_F04_screenshot.png)
-![CLI F04](screenshots/CLI_F04_screenshot.png)
+![GUI F04](stage2/screenshots/GUI_F04_screenshot.png)
+![CLI F04](stage2/screenshots/CLI_F04_screenshot.png)
 
 ### F05 — Q&A over materials
 - **Original requirement:** Answer questions using the student’s notes.
 - **How implemented:** `RetrievalTool.retrieve` (keyword overlap) selects relevant material text → QA prompt → LLM answer. CLI also accepts free-form questions via the planner.
 - **Differs from Stage 1?** Same feature; retrieval is **keyword** not embeddings (documented limitation — keeps the stack simple for the course).
 - **Screenshots:**
-![GUI F05](screenshots/GUI_F05_screenshot.png)
-![CLI F05](screenshots/CLI_F05_screenshot.png)
+![GUI F05](stage2/screenshots/GUI_F05_screenshot.png)
+![CLI F05](stage2/screenshots/CLI_F05_screenshot.png)
 
 ### F06 — Study plan
 - **Original requirement:** Generate a multi-session study plan (optionally using weak topics).
 - **How implemented:** `StudyPlanTool` reads weak topics + exam horizon; tries LLM plan, otherwise **deterministic fallback** sessions so the feature works without an API key.
 - **Differs from Stage 1?** Added reliable offline fallback so demos/grading never depend on LLM uptime; AI path still used when configured.
 - **Screenshots:**
-![GUI F06](screenshots/GUI_F06_screenshot.png)
-![CLI F06](screenshots/CLI_F06_screenshot.png)
+![GUI F06](stage2/screenshots/GUI_F06_screenshot.png)
+![CLI F06](stage2/screenshots/CLI_F06_screenshot.png)
 
 ### F07 — Flashcards
 - **Original requirement:** Generate flashcards from materials.
 - **How implemented:** `FlashcardTool` → LLM → parse Q/A cards → GUI review / CLI list (`flashcards`).
 - **Differs from Stage 1?** Provider only (Groq Strategy). Feature intent unchanged.
 - **Screenshots:**
-![GUI F07](screenshots/GUI_F07_screenshot.png)
-![CLI F07](screenshots/CLI_F07_screenshot.png)
+![GUI F07](stage2/screenshots/GUI_F07_screenshot.png)
+![CLI F07](stage2/screenshots/CLI_F07_screenshot.png)
 
 ### F08 — Quiz generation (two paths: Demo Quiz vs Quiz AI)
 
@@ -316,16 +316,16 @@ Screenshot files: [`stage2/screenshots/`](screenshots/). Combined demo: https://
 - **How implemented:** GUI **Demo Quiz** / CLI `demo-quiz` → `AgentController.createDemoQuiz` → Factory Method MCQs on CPU scheduling.
 - **Differs from Stage 1?** New offline path so TAs can run quizzes without an API key.
 - **Screenshots (Demo Quiz):**
-![GUI F08 Demo Quiz](screenshots/GUI_F08_demo_quiz_screenshot.png)
-![CLI F08 Demo Quiz](screenshots/CLI_F08_demo_quiz_screenshot.png)
+![GUI F08 Demo Quiz](stage2/screenshots/GUI_F08_demo_quiz_screenshot.png)
+![CLI F08 Demo Quiz](stage2/screenshots/CLI_F08_demo_quiz_screenshot.png)
 
 #### F08b — Quiz (AI)
 - **Original requirement:** Generate quizzes from materials via LLM (Factory Method for question types).
 - **How implemented:** GUI **Quiz (AI)** / CLI `quiz` → `QuizTool` → LLM → `QuizFactory` products.
 - **Differs from Stage 1?** Provider only (Groq Strategy); feature intent unchanged.
 - **Screenshots (Quiz AI):**
-![GUI F08 Quiz AI](screenshots/GUI_F08_QUIZ_screenshot.png)
-![CLI F08 Quiz AI](screenshots/CLI_F08_QUIZ_screenshot.png)
+![GUI F08 Quiz AI](stage2/screenshots/GUI_F08_QUIZ_screenshot.png)
+![CLI F08 Quiz AI](stage2/screenshots/CLI_F08_QUIZ_screenshot.png)
 
 ### F09 — Grade + explain (two paths: Demo Quiz grade vs Quiz AI grade)
 
@@ -334,40 +334,40 @@ Screenshot files: [`stage2/screenshots/`](screenshots/). Combined demo: https://
 - **How implemented:** Submit Demo Quiz → `QuizEngine.grade` → `ExplainTool` → `ProgressTracker.record` (Observer).
 - **Differs from Stage 1?** No — same grading pipeline; input quiz is the deterministic Demo Quiz.
 - **Screenshots (Demo Quiz grade):**
-![GUI F09 Demo Quiz grade](screenshots/GUI_F09_demo_quiz_screenshot.png)
-![CLI F09 Demo Quiz grade](screenshots/CLI_F09_demo_quiz_grade_screenshot.png)
+![GUI F09 Demo Quiz grade](stage2/screenshots/GUI_F09_demo_quiz_screenshot.png)
+![CLI F09 Demo Quiz grade](stage2/screenshots/CLI_F09_demo_quiz_grade_screenshot.png)
 
 #### F09b — Grade Quiz (AI)
 - **Original requirement:** Grade answers and explain misses (applied to an AI-generated quiz).
 - **How implemented:** Submit Quiz (AI) → same `QuizEngine` / `ExplainTool` / `ProgressTracker` path as F09a.
 - **Differs from Stage 1?** No — same grading pipeline; input quiz comes from F08b.
 - **Screenshots (Quiz AI grade):**
-![GUI F09 Quiz AI grade](screenshots/GUI_F09_QUIZ_screenshot.png)
-![CLI F09 Quiz AI grade](screenshots/CLI_F09_QUIZ_Grade_screenshot.png)
+![GUI F09 Quiz AI grade](stage2/screenshots/GUI_F09_QUIZ_screenshot.png)
+![CLI F09 Quiz AI grade](stage2/screenshots/CLI_F09_QUIZ_Grade_screenshot.png)
 
 ### F10 — Weak topics
 - **Original requirement:** Identify weak topics from quiz performance.
 - **How implemented:** `ProgressTracker.weakTopics(courseId)` aggregates low scores by topic; GUI button / CLI `weak`.
 - **Differs from Stage 1?** No.
 - **Screenshots:**
-![GUI F10](screenshots/GUI_F10_screenshot.png)
-![CLI F10](screenshots/CLI_F10_screenshot.png)
+![GUI F10](stage2/screenshots/GUI_F10_screenshot.png)
+![CLI F10](stage2/screenshots/CLI_F10_screenshot.png)
 
 ### F11 — Progress history
 - **Original requirement:** Show history of quiz attempts / scores.
 - **How implemented:** `ProgressTracker.history` reads persisted `progress.json`; GUI History / CLI `history`.
 - **Differs from Stage 1?** Persistence file path clarified (`data/progress.json`); behavior matches Stage 1 Observer design.
 - **Screenshots:**
-![GUI F11](screenshots/GUI_F11_screenshot.png)
-![CLI F11](screenshots/CLI_F11_screenshot.png)
+![GUI F11](stage2/screenshots/GUI_F11_screenshot.png)
+![CLI F11](stage2/screenshots/CLI_F11_screenshot.png)
 
 ### F12 — Natural-language multi-step commands
 - **Original requirement:** Accept NL requests that may chain tools (e.g. summarize then flashcards).
 - **How implemented:** `Planner.parse` → `AgentController.handleRequest` → `ToolManager` runs ordered tools; GUI **Ask / NL** and CLI `nl …`.
 - **Differs from Stage 1?** No.
 - **Screenshots:**
-![GUI F12](screenshots/GUI_F12_screenshot.png)
-![CLI F12](screenshots/CLI_F12_screenshot.png)
+![GUI F12](stage2/screenshots/GUI_F12_screenshot.png)
+![CLI F12](stage2/screenshots/CLI_F12_screenshot.png)
 
 ### Standalone CLI batch (Stage 2/3 addition)
 - **Original Stage 1 requirement:** Terminal CLI as a view (interactive).
