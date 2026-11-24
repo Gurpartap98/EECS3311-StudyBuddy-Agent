@@ -134,28 +134,14 @@ stage2/screenshots/        Feature screenshots for the Stage 2 report
 stage2/diagrams/           Updated UML (class, use-case, sequences)
 ```
 
-## Zoom demo video (GUI then CLI) — due Nov 24
+## Demos
 
-Record **one short Zoom video** (~2–3 minutes):
+- **GUI then CLI (same task):** https://www.youtube.com/watch?v=umorkbnIZ_8  
+- Per-feature GUI + CLI clips are indexed in [`stage2-report.md`](stage2-report.md) §7.
 
-1. Say: “GUI then CLI for the same study task.”  
-2. **GUI:** New Course → Upload `data/samples/os-scheduling.txt` → Demo Quiz → submit → Weak Topics / History  
-3. **CLI:** `java -jar target/Agent.jar -LLMAPI -input examples/task.txt`  
-   (or interactive `cli` with the same steps)  
-4. Upload to YouTube (Unlisted/Public) and add the link to `stage2/stage2-report.md` §7  
+## Stage 2 artifacts
 
-Existing per-feature GUI videos + CLI video remain linked in the report.
-
-## Stage 2 submission checklist
-
-1. Source on this public GitHub repo  
-2. README (this file) with JAR + `-input` docs  
-3. `.env.example` only — never commit `.env`  
-4. `stage2-report.pdf` (+ `stage2/stage2-report.pdf`)  
-5. Feature videos (GUI + CLI) indexed in the report  
-6. Screenshots under `stage2/screenshots/` referenced in the report  
-7. Weekly commits Periods 1–3  
-8. Updated UML in `stage2/diagrams/`  
-9. Standalone `target/Agent.jar` via `mvn package`  
-
-Submit this repository URL through the course system.
+- Reports: [`stage2-report.md`](stage2-report.md) / [`stage2-report.pdf`](stage2-report.pdf)  
+- Screenshots: [`stage2/screenshots/`](stage2/screenshots/)  
+- Diagrams: [`stage2/diagrams/`](stage2/diagrams/)  
+- Build: `mvn -q -DskipTests package` → `target/Agent.jar`
